@@ -1,0 +1,147 @@
+# .github/workflows/cd.yml
+
+# Continuous Deployment pipeline.
+# Triggers ONLY when a commit is pushed (or PR merged) to the main branch.
+
+# This pipeline:
+#   1. Runs the full test suite one final time (as a safety net)
+#   2. Builds the Docker image for multiple CPU architectures
+#   3. Tags it with the Git SHA, branch name, and "latest"
+#   4. Pushes it to GitHub Container Registry (ghcr.io)
+
+# After this runs, anyone can pull the latest version
+
+name: CD
+
+on:
+  push:
+    branches:
+      - main    # Only runs when code lands on main 
+
+# Permissions needed to push to GitHub Container Registry.
+# These are scoped to the minimum required — principle of least privilege.
+permissions:
+  contents: read       
+  packages: write      
+
+jobs:
+
+  # Job 1: Final test gate 
+  # Re-runs tests on the exact commit being deployed.
+  
+  test:
+    name: Final Test Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-3.11-${{ hashFiles('requirements.txt') }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gdal-bin libgdal-dev python3-dev
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt pytest pytest-cov
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+        env:
+          TESTING: "true"
+          DATABASE_PATH: ":memory:"
+          SECRET_KEY: "cd-gate-secret"
+          OPENSKY_USERNAME: ""
+          OPENSKY_PASSWORD: ""
+
+
+  # Job 2: Build and push Docker image
+  deploy:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: test    # Only deploy if tests pass
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # QEMU allows building Docker images for CPU architectures 
+      - name: Set up QEMU (multi-arch support)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      
+      
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Generate Docker image tags and labels automatically.
+      # docker/metadata-action reads Git metadata and creates tags like:
+      #
+      #   ghcr.io/username/wa-drone-tracker:latest        (always on main)
+      #   ghcr.io/username/wa-drone-tracker:main          (branch name)
+      #   ghcr.io/username/wa-drone-tracker:sha-a1b2c3d   (short Git SHA)
+      #
+      # Using the Git SHA tag means every deployment is uniquely identified
+      # and you can roll back to any previous version by its SHA.
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=sha,prefix=sha-,format=short
+      
+      
+      # push: true uploads to ghcr.io after building.
+      # cache-from/cache-to: reuse build cache from previous runs,
+      # significantly speeding up builds when only app code changes
+      # (the slower dependency-install layers are cached).
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Print a summary to the GitHub Actions run page showing what was deployed.
+      # $GITHUB_STEP_SUMMARY writes to a special file that GitHub renders
+      # as a formatted summary on the Actions run page.
+      - name: Deployment summary
+        run: |
+          echo "## Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`ghcr.io/${{ github.repository }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pull the latest image:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ghcr.io/${{ github.repository }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo "docker compose up" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

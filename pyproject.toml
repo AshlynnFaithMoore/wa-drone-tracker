@@ -1,0 +1,105 @@
+# pyproject.toml
+
+# The modern Python project configuration file.
+# PEP 517/518 established pyproject.toml as the standard place for
+# build system config, tool config, and project metadata.
+#
+# For this project we use it to configure black, isort, and pytest
+
+
+[tool.black]
+# Must match max-line-length in .flake8 and CI workflow
+line-length = 100
+
+# Python versions black should target when choosing syntax
+target-version = ["py310", "py311", "py312"]
+
+# Directories black should skip
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | venv
+  | __pycache__
+  | \.pytest_cache
+  | htmlcov
+  | \.eggs
+)/
+'''
+
+
+[tool.isort]
+# "black" profile makes isort fully compatible with black's formatting.
+
+profile = "black"
+
+line_length = 100
+
+# Tell isort which imports are your own project modules (first-party).
+# isort organizes imports into three groups:
+#   1. Standard library (os, sys, datetime...)
+#   2. Third-party (flask, pandas, requests...)
+#   3. First-party (app, config, models, routes, data...)
+# With correct first-party config, your imports will be sorted like:
+#
+#   import os                          ← stdlib
+#   from datetime import datetime
+#
+#   import pandas as pd                ← third-party
+#   from flask import Flask
+#
+#   from config import FLASK_PORT      ← first-party (my code)
+#   from models.models import db
+known_first_party = [
+    "app",
+    "config",
+    "models",
+    "routes",
+    "data",
+    "tests"
+]
+
+skip_glob = ["venv/*", ".venv/*", "htmlcov/*"]
+
+# Show a diff of what isort would change (useful when running locally)
+show_diff = false
+
+
+[tool.coverage.run]
+# Coverage configuration — used by pytest-cov.
+# These settings apply when running: pytest --cov=.
+
+# Which files to measure coverage for
+source = ["."]
+
+# Files/directories to exclude from coverage measurement
+omit = [
+    "venv/*",
+    ".venv/*",
+    "tests/*",          # Don't measure coverage of the tests themselves
+    "*/migrations/*",
+    "launcher.py",      # Tkinter GUI — hard to test automatically
+    "import_data.py",   # CLI script — tested via integration tests
+    "config.py",        # Config — just variable assignments
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+# Lines matching these patterns are excluded from coverage reports.
+# "pragma: no cover" is a standard comment you add to lines that
+# are intentionally not tested 
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "pass",
+]
+
+# Fail the coverage report if total coverage drops below this percentage.
+# CI uses this: if you add untested code, the build fails.
+fail_under = 75
+
+# Show which specific lines are missing coverage in the report
+show_missing = true

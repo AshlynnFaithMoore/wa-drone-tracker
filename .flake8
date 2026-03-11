@@ -1,0 +1,30 @@
+
+[flake8]
+# Maximum line length — must match what you pass in CI
+max-line-length = 100
+
+# Error codes to ignore:
+#   E203 — whitespace before ':' (black formats this way)
+#   W503 — line break before binary operator (black preference)
+#   W504 — line break after binary operator (conflicts with W503)
+extend-ignore = E203, W503, W504
+
+# Directories and files to skip entirely
+exclude =
+    .git,
+    __pycache__,
+    venv,
+    .venv,
+    *.egg-info,
+    htmlcov,
+    .pytest_cache,
+    migrations
+
+# Maximum complexity of a function
+max-complexity = 10
+
+# Show the source line that caused the error
+show-source = True
+
+# Show pep8 error statistics at the end
+statistics = True

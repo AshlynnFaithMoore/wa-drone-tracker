@@ -1,0 +1,141 @@
+#  .github/workflows/scheduled.yml
+
+# Scheduled maintenance jobs that run automatically on a cron schedule.
+# run on their own timetable.
+
+# Jobs:
+#   1. Weekly test run against latest dependencies
+#      (catches if a dependency update broke something)
+#   2. Docker image security scan with Trivy
+#      (finds known vulnerabilities in the container image)
+
+name: Scheduled Checks
+
+on:
+  # Cron syntax: minute hour day-of-month month day-of-week
+  # "0 8 * * 1" = 8:00 AM UTC every Monday
+  schedule:
+    - cron: "0 8 * * 1"
+
+  # Allow manual triggering from the GitHub Actions UI
+
+  workflow_dispatch:
+
+jobs:
+
+  # Job 1: Weekly dependency check 
+  # Installs the latest versions of all dependencies 
+  # and runs the test suite. If a transitive dependency released a breaking
+  # change, this catches it 
+  weekly-test:
+    name: Weekly Test (Latest Dependencies)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gdal-bin libgdal-dev python3-dev
+
+      # Install without pinned versions to test against the latest releases.
+      # pip install --upgrade upgrades everything to the newest compatible version.
+      - name: Install latest dependencies
+        run: |
+          pip install --upgrade pip
+          pip install --upgrade -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+        env:
+          TESTING: "true"
+          DATABASE_PATH: ":memory:"
+          SECRET_KEY: "scheduled-test-secret"
+          OPENSKY_USERNAME: ""
+          OPENSKY_PASSWORD: ""
+
+      # If the weekly test fails, open a GitHub Issue automatically.
+      # This notifies you of the dependency problem without requiring
+      # a manual check of the Actions page every Monday.
+      - name: Create issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().slice(0, 10);
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Weekly dependency test failed (${date})`,
+              body: `The weekly scheduled test run failed, which may indicate a breaking change in a dependency.\n\n**Workflow run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nPlease investigate and update \`requirements.txt\` as needed.`,
+              labels: ['bug', 'dependencies']
+            });
+
+
+  # Job 2: Docker security scan 
+  # Trivy is an open-source vulnerability scanner for container images.
+  # It checks the OS packages and Python packages in the image against
+  # the CVE (Common Vulnerabilities and Exposures) database.
+  
+  security-scan:
+    name: Docker Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build the image locally for scanning (don't push)
+      - name: Build image for scanning
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: wa-drone-tracker:scan
+          cache-from: type=gha
+
+      # Run Trivy vulnerability scanner.
+      # severity: CRITICAL,HIGH — only report serious vulnerabilities
+      
+      # exit-code: 1 — fail the job if any critical/high vulnerabilities found
+      # ignore-unfixed: true — skip vulnerabilities with no available fix
+     
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: wa-drone-tracker:scan
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
+      # Also output SARIF format for GitHub's Security tab.
+      # SARIF (Static Analysis Results Interchange Format) is a standard
+      # that GitHub uses to display security findings 
+      - name: Run Trivy (SARIF output for GitHub Security tab)
+        uses: aquasecurity/trivy-action@master
+        if: always()    # Run even if the previous Trivy step failed
+        with:
+          image-ref: wa-drone-tracker:scan
+          format: sarif
+          output: trivy-results.sarif
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif

@@ -1,0 +1,141 @@
+# .github/workflows/pr-checks.yml
+
+# Additional checks that run specifically on Pull Requests.
+# These are checks that are only meaningful in the context of a PR —
+# they compare the PR branch against the base branch (main).
+
+# Jobs in this workflow:
+#   1. pr-title     — enforces Conventional Commits format on PR titles
+#   2. coverage-diff — comments on the PR with the coverage change
+#   3. size-check   — warns if the PR is very large (hard to review)
+
+name: PR Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+    # Also trigger when the PR title changes 
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+
+  # Job 1: PR title format
+  # Enforces Conventional Commits format: https://www.conventionalcommits.org
+  # Valid format: type(scope): description
+  
+  
+  pr-title:
+    name: PR Title Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title follows Conventional Commits
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Allowed commit types (the word before the colon)
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            test
+            chore
+            perf
+            ci
+          
+          requireScope: false
+
+
+  # Job 2: Coverage diff comment 
+  # Runs the test suite and posts a comment on the PR showing:
+  #   - Overall coverage percentage
+  #   - Whether coverage went up or down compared to main
+  #   - Which files lost coverage
+  #
+  # This makes coverage a visible part of code review — reviewers can
+  # immediately see if new code is untested.
+  coverage-diff:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    # Only run on PRs from the same repo (not forks) to access secrets
+    if: github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gdal-bin libgdal-dev python3-dev
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt pytest pytest-cov
+
+      - name: Run tests with coverage
+        run: |
+          pytest tests/ \
+            --cov=. \
+            --cov-report=xml:coverage.xml \
+            --cov-report=term-missing \
+            -q
+        env:
+          TESTING: "true"
+          DATABASE_PATH: ":memory:"
+          SECRET_KEY: "pr-check-secret"
+          OPENSKY_USERNAME: ""
+          OPENSKY_PASSWORD: ""
+
+      # Post coverage results as a PR comment using the coverage.xml file.
+      # The comment is updated on each new push to the PR.
+      - name: Post coverage comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Minimum coverage percentage — the action will warn only
+          
+          MINIMUM_GREEN: 80
+          MINIMUM_ORANGE: 60
+
+
+  # Job 3: PR size warning
+  # Warns if a PR touches more than 500 lines of code.
+  
+  size-check:
+    name: PR Size Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Fetch the full git history so it can diff against main
+          fetch-depth: 0
+
+      - name: Check PR size
+        run: |
+          # Count lines changed (added + removed) excluding certain file types
+          LINES=$(git diff origin/main...HEAD \
+            -- '*.py' '*.html' '*.js' '*.css' '*.yml' '*.yaml' \
+            | grep '^[+-]' \
+            | grep -v '^[+-]\{3\}' \
+            | wc -l)
+
+          echo "Lines changed: $LINES"
+
+          if [ "$LINES" -gt 1000 ]; then
+            echo "::warning::This PR changes $LINES lines. Consider breaking it into smaller PRs for easier review."
+          elif [ "$LINES" -gt 500 ]; then
+            echo "::notice::This PR changes $LINES lines. Moderately large — reviewers may need extra time."
+          else
+            echo "✓ PR size is reasonable ($LINES lines changed)"
+          fi

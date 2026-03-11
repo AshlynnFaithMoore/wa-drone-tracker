@@ -1,0 +1,225 @@
+# .github/workflows/ci.yml
+# -------------------------
+# Continuous Integration pipeline.
+# Runs on every push to any branch, and on every pull request targeting main.
+# --------------------------
+
+
+name: CI
+
+# Triggers on push and pull
+on:
+    push:
+        branches:
+        - "**"          # Every branch push triggers CI
+    pull_request:
+        branches:
+        - main          # PRs targeting main also trigger CI
+
+# jobs
+jobs:
+
+  # ── Job 1: Lint & format check ─────────────────────────────────────────────
+  # Runs first to check code style/format errors
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest   # GitHub-hosted Ubuntu runner (free)
+
+    steps:
+      # Step 1: Check out repository code onto the runner machine.
+      
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up the specific Python version we develop against.
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Step 3: Cache pip packages.
+      # The cache key includes the hash of requirements.txt — so the cache
+      # is invalidated (and packages are re-downloaded) only when
+      # requirements.txt changes. This saves 30–60 seconds per run.
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # Step 4: Install only the linting tools.
+      
+      - name: Install linting tools
+        run: pip install flake8 black isort
+
+      # Step 5: flake8 checks for Python syntax errors and style violations.
+      # --max-line-length 100: allow lines up to 100 chars 
+      # --extend-ignore E203: ignore whitespace before ':' 
+      - name: Run flake8
+        run: |
+          flake8 . \
+            --max-line-length 100 \
+            --extend-ignore E203,W503 \
+            --exclude venv,.venv,__pycache__,.git
+
+      # Step 6: black checks that code is formatted consistently.
+      # --check: don't reformat, just exit with error if formatting differs.
+      # --diff: show what would change.
+      - name: Check black formatting
+        run: black --check --diff --line-length 100 .
+
+      # Step 7: isort checks that imports are sorted correctly.
+      # --check-only: don't reformat, just report.
+      # --profile black: use black-compatible import sorting rules.
+      - name: Check import sorting (isort)
+        run: isort --check-only --profile black .
+
+    # Job 2: Test suite 
+  # Runs pytest across multiple Python versions to ensure compatibility.
+  # The 'needs: lint' means this job only starts if the lint job passed 
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    needs: lint    # Only run if lint passes
+
+    # Matrix strategy: run this job once per Python version listed.
+    # This catches version-specific bugs (e.g. dict ordering, f-string syntax).
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+      
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # Cache pip per Python version 
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}
+
+      # Install system dependencies needed by geopandas/GDAL.
+    
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gdal-bin \
+            libgdal-dev \
+            python3-dev
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      # Run the full test suite with coverage.
+      # --cov=.              : measure coverage for the whole project
+      # --cov-report=xml     : output coverage.xml (read by Codecov below)
+      # --cov-report=term-missing : also print missed lines to the CI log
+      # -v                   : verbose output (show each test name)
+      # --tb=short           : concise tracebacks on failure
+      - name: Run tests
+        run: |
+          pytest tests/ \
+            --cov=. \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            -v \
+            --tb=short
+        env:
+          # Telling the app to use in-memory SQLite for tests
+          TESTING: "true"
+          DATABASE_PATH: ":memory:"
+          # Dummy values so config.py doesn't fail on missing env vars
+          SECRET_KEY: "ci-test-secret-key"
+          OPENSKY_USERNAME: ""
+          OPENSKY_PASSWORD: ""
+
+      # Upload coverage report to Codecov.
+      # Codecov reads coverage.xml and shows a coverage percentage badge
+    
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          flags: python${{ matrix.python-version }}
+          fail_ci_if_error: false   # Don't fail CI if Codecov upload fails
+
+
+  # Job 3: Docker build verification 
+  # Verifies the Docker image builds successfully without actually pushing it.
+  # Runs on every branch push — catches Dockerfile errors before they reach main.
+  docker-build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    needs: lint    # Only run if lint passes
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Docker Buildx — an extended Docker build tool that supports
+      # multi-platform builds, build caching, and other advanced features.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build the Docker image but don't push it.
+      # load: true loads it into the local Docker daemon so we can run it.
+      # cache-from/cache-to: use GitHub Actions cache to speed up builds.
+      # The cache key is based on the Git ref and SHA, so each branch gets
+      # its own cache but can fall back to the main branch cache.
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: wa-drone-tracker:ci-test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Run a quick smoke test: start the container, wait for it to be
+      # healthy, hit the /api/stats endpoint, then stop it.
+      - name: Smoke test Docker image
+        run: |
+          # Start container in detached mode
+          docker run -d \
+            --name wa_drone_test \
+            -p 5050:5050 \
+            -e SECRET_KEY=ci-test-key \
+            -e DATABASE_PATH=/tmp/test.db \
+            wa-drone-tracker:ci-test
+
+          # Wait up to 30 seconds for the health check to pass
+          echo "Waiting for container to be healthy..."
+          for i in $(seq 1 30); do
+            STATUS=$(docker inspect --format='{{.State.Health.Status}}' wa_drone_test 2>/dev/null || echo "starting")
+            if [ "$STATUS" = "healthy" ]; then
+              echo "Container is healthy after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+
+          # Hit the API endpoint and verify it returns HTTP 200
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5050/api/stats)
+          echo "HTTP status: $HTTP_CODE"
+          [ "$HTTP_CODE" = "200" ] && echo "✓ API is responding" || (echo "✗ API returned $HTTP_CODE" && exit 1)
+
+          # Clean up
+          docker stop wa_drone_test
+          docker rm wa_drone_test
