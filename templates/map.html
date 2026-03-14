@@ -1,0 +1,76 @@
+<!--
+  templates/map.html
+  
+  Extends base.html. 
+  
+  Adds Leaflet CSS in extra_head and map.js in extra_scripts.
+  The map div needs full-viewport height minus the navbar and page padding.
+-->
+{% extends "base.html" %}
+
+{% block title %}Flight Map — WA Drone Tracker{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <style>
+    /* Override page padding for map so it reaches edge-to-edge */
+    .page { padding: 0; }
+
+    #map-wrapper { padding: 1rem 1.5rem 0; }
+    #map { height: calc(100vh - 140px); border-radius: 12px; }
+
+    .leaflet-popup-content-wrapper {
+      background: #313244; color: #cdd6f4; border: 1px solid #45475a;
+    }
+    .leaflet-popup-tip { background: #313244; }
+    .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div id="map-wrapper">
+
+  <!-- Filter / control bar -->
+  <div class="flex items-center gap-3 mb-3 flex-wrap">
+    <h1 class="text-xl font-bold">Live Flight Map</h1>
+
+    <select id="county-filter" class="ml-auto">
+      <option value="">All Counties</option>
+    </select>
+
+    <div class="flex items-center gap-2 text-sm">
+      <span class="text-gray-400">Max alt:</span>
+      <input type="range" id="alt-filter" min="0" max="122" value="122" step="10" style="width:100px">
+      <span id="alt-value" class="w-14">122m</span>
+    </div>
+
+    <button id="heatmap-btn"
+      class="text-xs px-3 py-1.5 rounded-full font-semibold"
+      style="background:#45475a; color:#cdd6f4">
+      Heatmap
+    </button>
+    <button id="refresh-btn"
+      class="text-xs px-3 py-1.5 rounded-full font-semibold"
+      style="background:#89b4fa; color:#1e1e2e">
+       Refresh
+    </button>
+  </div>
+
+  <!-- Legend + count -->
+  <div class="flex gap-5 text-xs text-gray-400 mb-2">
+    <span><span class="dot" style="background:#a6e3a1"></span>Low (&lt;50m)</span>
+    <span><span class="dot" style="background:#fab387"></span>Mid (50–100m)</span>
+    <span><span class="dot" style="background:#f38ba8"></span>High (&gt;100m)</span>
+    <span><span class="dot" style="background:#89b4fa"></span>Unknown</span>
+    <span id="flight-count" class="ml-auto text-blue-300 font-medium"></span>
+  </div>
+
+  <div id="map"></div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="/static/js/map.js"></script>
+{% endblock %}

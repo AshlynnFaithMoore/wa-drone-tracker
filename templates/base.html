@@ -1,0 +1,241 @@
+<!--
+  templates/base.html
+  
+  The shared layout template that every page extends.
+
+  Jinja2 template inheritance works like this:
+    - base.html defines the full page structure with named "blocks"
+    - Child templates (index.html, map.html, etc.) call {% extends "base.html" %}
+      and then fill in those blocks with their own content
+    - Anything not overridden falls back to this file's defaults
+
+  Blocks defined here:
+    {% block title %}      → browser tab title
+    {% block extra_head %} → page-specific CSS or CDN links (Leaflet CSS)
+    {% block content %}    → the main page body
+    {% block extra_scripts %}→ page-specific JS files (e.g. map.js, dashboard.js)
+
+  This means the <head> tags, nav bar, dark theme, and footer are written
+  ONCE here and automatically inherited by all pages.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!--
+    The title block has a default value ("WA Drone Tracker").
+    Child templates override it like:
+      {% block title %}Flight Map — WA Drone Tracker{% endblock %}
+  -->
+  <title>{% block title %}WA Drone Tracker{% endblock %}</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Shared base styles -->
+  <style>
+    /* ---- Reset & base ---- */
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ---- Navigation bar ---- */
+    .navbar {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 0.85rem 1.5rem;
+      background: #181825;
+      border-bottom: 1px solid #313244;
+      position: sticky;
+      top: 0;
+      z-index: 100;   /* Stay above map tiles and other content */
+    }
+    .navbar .brand {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #cdd6f4;
+      text-decoration: none;
+    }
+    .navbar .nav-links {
+      display: flex;
+      gap: 1.25rem;
+      margin-left: auto;
+    }
+    .navbar a {
+      color: #a6adc8;
+      text-decoration: none;
+      font-size: 0.875rem;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .navbar a:hover    { background: #313244; color: #cdd6f4; }
+    .navbar a.active   { background: #313244; color: #89b4fa; font-weight: 600; }
+
+    /* ---- Page wrapper ---- */
+    .page { padding: 1.5rem; }
+
+    /* ---- Shared card ---- */
+    .card {
+      background: #313244;
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+    }
+
+    /* ---- Shared form inputs ---- */
+    select, input[type=text], input[type=range] {
+      background: #45475a;
+      color: #cdd6f4;
+      border: 1px solid #585b70;
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 0.875rem;
+      outline: none;
+    }
+    select:focus, input[type=text]:focus { border-color: #89b4fa; }
+
+    /* ---- Shared badge ---- */
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-minor    { background: #2a4a2e; color: #a6e3a1; }
+    .badge-moderate { background: #4a3a1a; color: #fab387; }
+    .badge-severe   { background: #4a1a1a; color: #f38ba8; }
+
+    /* ---- Loading spinner ---- */
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid #45475a;
+      border-top-color: #89b4fa;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 2rem auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- Toast notification ---- */
+    #toast {
+      position: fixed;
+      bottom: 1.5rem; right: 1.5rem;
+      background: #313244;
+      color: #cdd6f4;
+      border: 1px solid #45475a;
+      border-radius: 10px;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.875rem;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+
+  <!--
+    extra_head block: child templates insert page-specific <link> or <style>
+    tags here. For example, map.html adds the Leaflet CSS link here.
+    Default is empty.
+  -->
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+
+  
+  <!-- Navigation bar  -->
+  
+  <!--
+    request.endpoint is a Flask variable containing the name of the current
+    route function (e.g. "views.index", "views.map_view").
+    use it to add an "active" CSS class to the current page's nav link.
+  -->
+  <nav class="navbar">
+    <a href="/" class="brand">🛸 WA Drone Tracker</a>
+    <div class="nav-links">
+      <a href="/"           class="{{ 'active' if request.endpoint == 'views.index' }}">
+         Dashboard
+      </a>
+      <a href="/map"        class="{{ 'active' if request.endpoint == 'views.map_view' }}">
+         Map
+      </a>
+      <a href="/incidents"  class="{{ 'active' if request.endpoint == 'views.incidents' }}">
+         Incidents
+      </a>
+      <a href="/registrations" class="{{ 'active' if request.endpoint == 'views.registrations' }}">
+         Registrations
+      </a>
+    </div>
+  </nav>
+
+  
+  <!-- Main content -->
+  
+  <main class="page">
+    {% block content %}{% endblock %}
+  </main>
+
+  
+  <!-- Footer                                                               -->
+  
+  <footer style="text-align:center; padding:1rem; color:#585b70; font-size:0.75rem; border-top:1px solid #313244; margin-top:2rem;">
+    WA Drone Tracker &nbsp;·&nbsp;
+    Data: <a href="https://opensky-network.org" target="_blank" style="color:#585b70">OpenSky Network</a>
+    &amp; <a href="https://www.faa.gov" target="_blank" style="color:#585b70">FAA</a>
+    &nbsp;·&nbsp; Refreshes every 60s
+  </footer>
+
+ 
+  <!-- Toast notification (shared utility, usable on any page)             -->
+  
+  <div id="toast"></div>
+
+  
+  <!-- Shared JS utilities                                                  -->
+  
+  <script>
+    /**
+     * showToast(message, duration)
+     * Shows a brief notification in the bottom-right corner.
+     * Any page's JS can call window.showToast("Saved!", 2000).
+     */
+    function showToast(msg, duration = 2500) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), duration);
+    }
+
+    /**
+     * Highlight the active nav link based on current path.
+     * The Jinja2 class above handles this server-side, but this
+     * JS version is a fallback for any dynamically-loaded content.
+     */
+    document.querySelectorAll(".nav-links a").forEach(a => {
+      if (a.getAttribute("href") === window.location.pathname) {
+        a.classList.add("active");
+      }
+    });
+  </script>
+
+  <!--
+    extra_scripts block: child templates insert their page-specific
+    <script src="..."> tags here, AFTER the shared utilities above.
+    
+  -->
+  {% block extra_scripts %}{% endblock %}
+
+</body>
+</html>

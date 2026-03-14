@@ -1,0 +1,74 @@
+<!--
+  templates/index.html
+  
+  Extends base.html 
+  
+
+  {{ stats.total_flights }} uses the 'stats' dict passed from views.py
+  to render the initial values server-side before dashboard.js loads.
+-->
+{% extends "base.html" %}
+
+{% block title %}Dashboard — WA Drone Tracker{% endblock %}
+
+{% block content %}
+
+<h1 class="text-2xl font-bold mb-6">Overview Dashboard</h1>
+
+<!-- KPI Cards -->
+<!-- Initial values from Flask (server-side); JS updates them every 60s -->
+<div class="grid grid-cols-4 gap-4 mb-8">
+  <div class="card text-center">
+    <div class="text-4xl font-bold text-blue-400" id="kpi-total-flights">
+      {{ stats.total_flights }}
+    </div>
+    <div class="text-xs text-gray-400 mt-1">Total Flight Records</div>
+  </div>
+  <div class="card text-center">
+    <div class="text-4xl font-bold text-blue-400" id="kpi-active-flights">
+      {{ stats.active_flights }}
+    </div>
+    <div class="text-xs text-gray-400 mt-1">Active (Last Hour)</div>
+  </div>
+  <div class="card text-center">
+    <div class="text-4xl font-bold text-blue-400" id="kpi-registrations">
+      {{ stats.total_registrations }}
+    </div>
+    <div class="text-xs text-gray-400 mt-1">WA Registrations</div>
+  </div>
+  <div class="card text-center">
+    <div class="text-4xl font-bold text-blue-400" id="kpi-incidents">
+      {{ stats.total_incidents }}
+    </div>
+    <div class="text-xs text-gray-400 mt-1">Incidents Reported</div>
+  </div>
+</div>
+
+<!-- Charts row -->
+<div class="grid grid-cols-3 gap-4 mb-6">
+  <div class="card col-span-2">
+    <h2 class="text-sm font-semibold text-gray-400 mb-3">Flights by County</h2>
+    <canvas id="countyChart" height="120"></canvas>
+  </div>
+  <div class="card">
+    <h2 class="text-sm font-semibold text-gray-400 mb-3">Registrations by Purpose</h2>
+    <canvas id="purposeChart" height="120"></canvas>
+  </div>
+</div>
+
+<!-- Altitude histogram -->
+<div class="card">
+  <h2 class="text-sm font-semibold text-gray-400 mb-3">Flight Altitude Distribution</h2>
+  <canvas id="altitudeChart" height="60"></canvas>
+</div>
+
+{% endblock %}
+
+{% block extra_head %}
+  <!-- Chart.js only needed on this page -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="/static/js/dashboard.js"></script>
+{% endblock %}

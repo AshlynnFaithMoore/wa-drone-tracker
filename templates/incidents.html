@@ -1,0 +1,109 @@
+<!--
+  templates/incidents.html
+  
+  Extends base.html. Only defines the table, filters, and modal.
+-->
+{% extends "base.html" %}
+
+{% block title %}Incidents — WA Drone Tracker{% endblock %}
+
+{% block extra_head %}
+<style>
+  table { border-collapse: collapse; width: 100%; }
+  thead th {
+    background: #313244; color: #a6adc8;
+    font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 10px 14px;
+    text-align: left; cursor: pointer;
+    user-select: none; white-space: nowrap;
+  }
+  thead th:hover { color: #cdd6f4; background: #3d3f54; }
+  thead th.sorted { color: #89b4fa; }
+  tbody tr { border-bottom: 1px solid #313244; cursor: pointer; transition: background 0.1s; }
+  tbody tr:hover { background: #2a2a3e; }
+  tbody td { padding: 10px 14px; font-size: 0.875rem; }
+
+  #modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  #modal-overlay.open { display: flex; }
+  #modal-box {
+    background: #313244; border-radius: 12px;
+    padding: 2rem; max-width: 520px; width: 90%; position: relative;
+  }
+  .modal-row { display: flex; gap: 8px; margin-bottom: 10px; font-size: 0.9rem; }
+  .modal-label { color: #a6adc8; width: 130px; flex-shrink: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-xl font-bold">Incident Reports</h1>
+  <button id="export-btn"
+    class="text-xs px-4 py-2 rounded-full font-semibold"
+    style="background:#a6e3a1; color:#1e1e2e">
+    ⬇ Export CSV
+  </button>
+</div>
+
+<!-- Filter bar -->
+<div class="flex gap-3 mb-4 flex-wrap items-center">
+  <input type="text" id="search-input"
+    placeholder="🔍  Search location or description..."
+    style="flex:1; min-width:220px">
+
+  <select id="severity-filter">
+    <option value="">All Severities</option>
+    <option value="Minor">Minor</option>
+    <option value="Moderate">Moderate</option>
+    <option value="Severe">Severe</option>
+  </select>
+
+  <select id="county-filter">
+    <option value="">All Counties</option>
+  </select>
+
+  <span id="row-count" class="text-sm text-gray-400"></span>
+</div>
+
+<!-- Table -->
+<div style="background:#181825; border-radius:12px; overflow:hidden;">
+  <table id="incidents-table">
+    <thead>
+      <tr>
+        <th data-col="incident_date">Date <span class="sort-arrow"></span></th>
+        <th data-col="location">Location <span class="sort-arrow"></span></th>
+        <th data-col="county">County <span class="sort-arrow"></span></th>
+        <th data-col="severity">Severity <span class="sort-arrow"></span></th>
+        <th data-col="reported_by">Reported By <span class="sort-arrow"></span></th>
+        <th data-col="description">Description <span class="sort-arrow"></span></th>
+      </tr>
+    </thead>
+    <tbody id="incidents-body"></tbody>
+  </table>
+</div>
+
+<div id="empty-state" class="hidden text-center py-16" style="color:#585b70">
+  No incidents match your current filters.
+</div>
+
+<!-- Detail modal -->
+<div id="modal-overlay">
+  <div id="modal-box">
+    <button id="modal-close"
+      style="position:absolute;top:1rem;right:1rem;font-size:1.2rem;cursor:pointer;color:#a6adc8">✕
+    </button>
+    <h2 class="text-lg font-bold mb-4" id="modal-title">Incident Details</h2>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="/static/js/incidents.js"></script>
+{% endblock %}

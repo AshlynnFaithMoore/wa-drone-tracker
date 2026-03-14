@@ -1,0 +1,126 @@
+<!--
+  templates/registrations.html
+  
+  Extends base.html. Shows:
+    - KPI cards: total WA registrations, commercial count, recreational count
+    - Bar chart: registrations by county (top 15)
+    - Line chart: year-over-year registration trend
+    - Searchable, sortable table of all WA registrations
+-->
+{% extends "base.html" %}
+
+{% block title %}Registrations — WA Drone Tracker{% endblock %}
+
+{% block extra_head %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    table { border-collapse: collapse; width: 100%; }
+    thead th {
+      background: #313244; color: #a6adc8;
+      font-size: 0.75rem; text-transform: uppercase;
+      letter-spacing: 0.05em; padding: 10px 14px;
+      text-align: left; cursor: pointer; user-select: none; white-space: nowrap;
+    }
+    thead th:hover { color: #cdd6f4; background: #3d3f54; }
+    thead th.sorted { color: #89b4fa; }
+    tbody tr { border-bottom: 1px solid #313244; transition: background 0.1s; }
+    tbody tr:hover { background: #2a2a3e; }
+    tbody td { padding: 9px 14px; font-size: 0.875rem; }
+  </style>
+{% endblock %}
+
+{% block content %}
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">Drone Registrations</h1>
+  <button id="export-btn"
+    class="text-xs px-4 py-2 rounded-full font-semibold"
+    style="background:#a6e3a1; color:#1e1e2e">
+    ⬇ Export CSV
+  </button>
+</div>
+
+<!-- KPI cards (populated by registrations.js) -->
+<div class="grid grid-cols-3 gap-4 mb-8">
+  <div class="card text-center">
+    <div class="text-4xl font-bold text-blue-400" id="kpi-total">
+      {{ total }}
+    </div>
+    <div class="text-xs text-gray-400 mt-1">Total WA Registrations</div>
+  </div>
+  <div class="card text-center">
+    <div class="text-4xl font-bold" style="color:#fab387" id="kpi-commercial">—</div>
+    <div class="text-xs text-gray-400 mt-1">Commercial</div>
+  </div>
+  <div class="card text-center">
+    <div class="text-4xl font-bold" style="color:#a6e3a1" id="kpi-recreational">—</div>
+    <div class="text-xs text-gray-400 mt-1">Recreational</div>
+  </div>
+</div>
+
+<!-- Charts row -->
+<div class="grid grid-cols-2 gap-4 mb-6">
+  <div class="card">
+    <h2 class="text-sm font-semibold text-gray-400 mb-3">Registrations by County (Top 15)</h2>
+    <canvas id="regsByCountyChart" height="180"></canvas>
+  </div>
+  <div class="card">
+    <h2 class="text-sm font-semibold text-gray-400 mb-3">Year-over-Year Registrations</h2>
+    <canvas id="trendChart" height="180"></canvas>
+  </div>
+</div>
+
+<!-- Filter bar + table -->
+<div class="card">
+  <div class="flex gap-3 mb-4 flex-wrap items-center">
+    <input type="text" id="search-input"
+      placeholder="🔍  Search registration, county, or type..."
+      style="flex:1; min-width:220px">
+
+    <select id="purpose-filter">
+      <option value="">All Purposes</option>
+      <option value="Commercial">Commercial</option>
+      <option value="Recreational">Recreational</option>
+    </select>
+
+    <select id="county-filter">
+      <option value="">All Counties</option>
+    </select>
+
+    <select id="type-filter">
+      <option value="">All Types</option>
+    </select>
+
+    <span id="row-count" class="text-sm text-gray-400 ml-auto"></span>
+  </div>
+
+  <div style="background:#181825; border-radius:10px; overflow:hidden;">
+    <table id="reg-table">
+      <thead>
+        <tr>
+          <th data-col="registration_no">Reg. No <span class="sort-arrow"></span></th>
+          <th data-col="owner_county">County <span class="sort-arrow"></span></th>
+          <th data-col="drone_type">Type <span class="sort-arrow"></span></th>
+          <th data-col="purpose">Purpose <span class="sort-arrow"></span></th>
+          <th data-col="registered_date">Registered <span class="sort-arrow"></span></th>
+        </tr>
+      </thead>
+      <tbody id="reg-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Pagination controls -->
+  <div class="flex justify-between items-center mt-3 text-sm text-gray-400">
+    <button id="prev-btn"
+      class="px-3 py-1 rounded" style="background:#45475a">← Prev</button>
+    <span id="page-indicator"></span>
+    <button id="next-btn"
+      class="px-3 py-1 rounded" style="background:#45475a">Next →</button>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="/static/js/registrations.js"></script>
+{% endblock %}
