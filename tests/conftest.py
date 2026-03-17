@@ -23,6 +23,7 @@ Fixture scopes:
 """
 
 import pytest
+import os
 from datetime import date, datetime
 
 from app import create_app
@@ -43,15 +44,15 @@ def app():
     TESTING=True tells Flask to propagate exceptions instead of returning
     500 responses — this gives better error messages in tests.
     """
+    os.environ["TESTING"] = "true"
+    os.environ["DATABASE_PATH"] = ":memory:"
+
     test_app = create_app()
-    test_app.config.update(
-        {
-            "TESTING": True,
-            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-            # Disable CSRF protection in tests
-            "WTF_CSRF_ENABLED": False,
-        }
-    )
+    test_app.config.update({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "WTF_CSRF_ENABLED": False,
+    })
     return test_app
 
 
@@ -83,7 +84,6 @@ def client(app, db):
 
 
 # Sample data fixtures
-# ---------------------------------------------------------------------------
 # These fixtures insert realistic sample records into the test database.
 # Tests that need data can request these fixtures by name.
 

@@ -14,6 +14,7 @@ from config import SQLALCHEMY_DATABASE_URI, FLASK_HOST, FLASK_PORT, FLASK_DEBUG
 from apscheduler.schedulers.background import BackgroundScheduler
 from config import REFRESH_INTERVAL_SECONDS
 import logging
+import os
 
 # Configure logging so all modules write to the same console format
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
@@ -89,7 +90,9 @@ def create_app():
         replace_existing=True,
     )
 
-    scheduler.start()
+    if not os.environ.get("TESTING"):
+        scheduler.start()
+        scheduler.start()
 
     return app
 
