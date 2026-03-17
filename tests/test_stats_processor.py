@@ -14,7 +14,7 @@ Naming conventions pytest uses for test discovery:
 
 import pytest
 from datetime import datetime, timedelta
-from models.models import FlightRecord, DroneRegistration, IncidentReport
+from models.models import FlightRecord, DroneRegistration
 from models.models import db as _db
 from data.processors.stats_processor import (
     get_overview_stats,
@@ -25,15 +25,13 @@ from data.processors.stats_processor import (
     save_flights,
 )
 
-
-
 # get_overview_stats()
 
 
 class TestGetOverviewStats:
     """
     Groups related tests for get_overview_stats().
-    
+
     """
 
     def test_returns_zero_counts_on_empty_db(self, db, app):
@@ -41,10 +39,10 @@ class TestGetOverviewStats:
         with app.app_context():
             stats = get_overview_stats()
 
-        assert stats["total_flights"]       == 0
-        assert stats["active_flights"]      == 0
+        assert stats["total_flights"] == 0
+        assert stats["active_flights"] == 0
         assert stats["total_registrations"] == 0
-        assert stats["total_incidents"]     == 0
+        assert stats["total_incidents"] == 0
 
     def test_counts_all_flight_records(self, sample_flights, app):
         """total_flights should equal the number of FlightRecord rows."""
@@ -60,22 +58,30 @@ class TestGetOverviewStats:
         """
         with app.app_context():
             old_flight = FlightRecord(
-                icao24="old001", latitude=47.6, longitude=-122.3,
-                altitude=50.0, on_ground=False, county="King",
-                recorded_at=datetime.utcnow() - timedelta(hours=2)  # 2 hours ago
+                icao24="old001",
+                latitude=47.6,
+                longitude=-122.3,
+                altitude=50.0,
+                on_ground=False,
+                county="King",
+                recorded_at=datetime.utcnow() - timedelta(hours=2),  # 2 hours ago
             )
             new_flight = FlightRecord(
-                icao24="new001", latitude=47.6, longitude=-122.3,
-                altitude=50.0, on_ground=False, county="King",
-                recorded_at=datetime.utcnow() - timedelta(minutes=10)  # 10 min ago
+                icao24="new001",
+                latitude=47.6,
+                longitude=-122.3,
+                altitude=50.0,
+                on_ground=False,
+                county="King",
+                recorded_at=datetime.utcnow() - timedelta(minutes=10),  # 10 min ago
             )
             _db.session.add_all([old_flight, new_flight])
             _db.session.commit()
 
             stats = get_overview_stats()
 
-        assert stats["active_flights"]  == 1
-        assert stats["total_flights"]   == 2
+        assert stats["active_flights"] == 1
+        assert stats["total_flights"] == 2
 
     def test_counts_only_wa_registrations(self, db, app):
         """
@@ -84,19 +90,22 @@ class TestGetOverviewStats:
         """
         with app.app_context():
             wa_reg = DroneRegistration(
-                registration_no="N100WA", owner_state="WA",
-                owner_county="King", purpose="Recreational"
+                registration_no="N100WA",
+                owner_state="WA",
+                owner_county="King",
+                purpose="Recreational",
             )
             or_reg = DroneRegistration(
-                registration_no="N100OR", owner_state="OR",
-                owner_county="Multnomah", purpose="Recreational"
+                registration_no="N100OR",
+                owner_state="OR",
+                owner_county="Multnomah",
+                purpose="Recreational",
             )
             _db.session.add_all([wa_reg, or_reg])
             _db.session.commit()
 
             stats = get_overview_stats()
 
-        
         assert stats["total_registrations"] == 1
 
     def test_counts_all_incidents(self, sample_incidents, app):
@@ -109,10 +118,13 @@ class TestGetOverviewStats:
         """The returned dict must always contain all four expected keys."""
         with app.app_context():
             stats = get_overview_stats()
-        expected_keys = {"total_flights", "active_flights",
-                         "total_registrations", "total_incidents"}
+        expected_keys = {
+            "total_flights",
+            "active_flights",
+            "total_registrations",
+            "total_incidents",
+        }
         assert expected_keys.issubset(stats.keys())
-
 
 
 # get_flights_by_county()
@@ -143,28 +155,45 @@ class TestGetFlightsByCounty:
         with app.app_context():
             # Add 3 King, 2 Pierce, 1 Snohomish
             for _ in range(3):
-                _db.session.add(FlightRecord(
-                    icao24="k1", latitude=47.6, longitude=-122.3,
-                    altitude=50.0, on_ground=False, county="King"
-                ))
+                _db.session.add(
+                    FlightRecord(
+                        icao24="k1",
+                        latitude=47.6,
+                        longitude=-122.3,
+                        altitude=50.0,
+                        on_ground=False,
+                        county="King",
+                    )
+                )
             for _ in range(2):
-                _db.session.add(FlightRecord(
-                    icao24="p1", latitude=47.2, longitude=-122.4,
-                    altitude=50.0, on_ground=False, county="Pierce"
-                ))
-            _db.session.add(FlightRecord(
-                icao24="s1", latitude=48.0, longitude=-122.2,
-                altitude=50.0, on_ground=False, county="Snohomish"
-            ))
+                _db.session.add(
+                    FlightRecord(
+                        icao24="p1",
+                        latitude=47.2,
+                        longitude=-122.4,
+                        altitude=50.0,
+                        on_ground=False,
+                        county="Pierce",
+                    )
+                )
+            _db.session.add(
+                FlightRecord(
+                    icao24="s1",
+                    latitude=48.0,
+                    longitude=-122.2,
+                    altitude=50.0,
+                    on_ground=False,
+                    county="Snohomish",
+                )
+            )
             _db.session.commit()
 
             result = get_flights_by_county()
 
         assert result[0]["county"] == "King"
-        assert result[0]["count"]  == 3
+        assert result[0]["count"] == 3
         assert result[1]["county"] == "Pierce"
-        assert result[1]["count"]  == 2
-
+        assert result[1]["count"] == 2
 
 
 # get_recent_flights()
@@ -182,10 +211,16 @@ class TestGetRecentFlights:
         """Should never return more rows than the limit parameter."""
         with app.app_context():
             for i in range(10):
-                _db.session.add(FlightRecord(
-                    icao24=f"x{i:03d}", latitude=47.6, longitude=-122.3,
-                    altitude=50.0, on_ground=False, county="King"
-                ))
+                _db.session.add(
+                    FlightRecord(
+                        icao24=f"x{i:03d}",
+                        latitude=47.6,
+                        longitude=-122.3,
+                        altitude=50.0,
+                        on_ground=False,
+                        county="King",
+                    )
+                )
             _db.session.commit()
 
             result = get_recent_flights(limit=5)
@@ -199,7 +234,6 @@ class TestGetRecentFlights:
         required_fields = {"id", "latitude", "longitude", "altitude", "county", "icao24"}
         for record in result:
             assert required_fields.issubset(record.keys())
-
 
 
 # get_registrations_by_purpose()
@@ -216,9 +250,8 @@ class TestGetRegistrationsByPurpose:
             result = get_registrations_by_purpose()
 
         purposes = {r["purpose"]: r["count"] for r in result}
-        assert purposes.get("Commercial")   == 2
+        assert purposes.get("Commercial") == 2
         assert purposes.get("Recreational") == 2
-
 
 
 # get_altitude_distribution()
@@ -237,29 +270,47 @@ class TestGetAltitudeDistribution:
         Verify they land in the correct buckets.
         """
         with app.app_context():
-            _db.session.add(FlightRecord(
-                icao24="low", latitude=47.6, longitude=-122.3,
-                altitude=20.0, on_ground=False, county="King"
-            ))
-            _db.session.add(FlightRecord(
-                icao24="mid", latitude=47.6, longitude=-122.3,
-                altitude=60.0, on_ground=False, county="King"
-            ))
+            _db.session.add(
+                FlightRecord(
+                    icao24="low",
+                    latitude=47.6,
+                    longitude=-122.3,
+                    altitude=20.0,
+                    on_ground=False,
+                    county="King",
+                )
+            )
+            _db.session.add(
+                FlightRecord(
+                    icao24="mid",
+                    latitude=47.6,
+                    longitude=-122.3,
+                    altitude=60.0,
+                    on_ground=False,
+                    county="King",
+                )
+            )
             _db.session.commit()
 
             result = get_altitude_distribution()
 
         buckets = {r["range"]: r["count"] for r in result}
-        assert buckets.get("0–25m")   == 1
-        assert buckets.get("50–75m")  == 1
+        assert buckets.get("0–25m") == 1
+        assert buckets.get("50–75m") == 1
 
     def test_ignores_null_altitudes(self, db, app):
         """Flights with NULL altitude should be excluded from the histogram."""
         with app.app_context():
-            _db.session.add(FlightRecord(
-                icao24="nullalt", latitude=47.6, longitude=-122.3,
-                altitude=None, on_ground=False, county="King"
-            ))
+            _db.session.add(
+                FlightRecord(
+                    icao24="nullalt",
+                    latitude=47.6,
+                    longitude=-122.3,
+                    altitude=None,
+                    on_ground=False,
+                    county="King",
+                )
+            )
             _db.session.commit()
 
             result = get_altitude_distribution()
@@ -267,7 +318,6 @@ class TestGetAltitudeDistribution:
         # All buckets should have count 0 (or no rows returned)
         total = sum(r["count"] for r in result)
         assert total == 0
-
 
 
 # save_flights()
@@ -279,16 +329,26 @@ class TestSaveFlights:
         """save_flights() should create a FlightRecord row for each input dict."""
         flights = [
             {
-                "icao24": "aaa", "callsign": "T1",
-                "latitude": 47.6, "longitude": -122.3,
-                "altitude": 50.0, "velocity": 5.0, "heading": 90.0,
-                "on_ground": False, "fetched_at": datetime.utcnow()
+                "icao24": "aaa",
+                "callsign": "T1",
+                "latitude": 47.6,
+                "longitude": -122.3,
+                "altitude": 50.0,
+                "velocity": 5.0,
+                "heading": 90.0,
+                "on_ground": False,
+                "fetched_at": datetime.utcnow(),
             },
             {
-                "icao24": "bbb", "callsign": "T2",
-                "latitude": 47.2, "longitude": -122.4,
-                "altitude": 80.0, "velocity": 7.0, "heading": 180.0,
-                "on_ground": False, "fetched_at": datetime.utcnow()
+                "icao24": "bbb",
+                "callsign": "T2",
+                "latitude": 47.2,
+                "longitude": -122.4,
+                "altitude": 80.0,
+                "velocity": 7.0,
+                "heading": 180.0,
+                "on_ground": False,
+                "fetched_at": datetime.utcnow(),
             },
         ]
         with app.app_context():
@@ -300,5 +360,5 @@ class TestSaveFlights:
     def test_handles_empty_list_gracefully(self, db, app):
         """save_flights([]) should not raise an exception."""
         with app.app_context():
-            save_flights([])   # Should not raise
+            save_flights([])  # Should not raise
             assert FlightRecord.query.count() == 0

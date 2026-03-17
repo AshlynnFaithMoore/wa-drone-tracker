@@ -18,7 +18,6 @@ from models.models import db, FlightRecord, DroneRegistration, IncidentReport
 logger = logging.getLogger(__name__)
 
 
-
 # County resolution
 
 
@@ -31,7 +30,7 @@ def resolve_county(lat, lon):
 
     The shapefile can be downloaded from:
     https://geo.wa.gov/datasets/wadnr::washington-state-county-boundaries
-    
+
     """
     try:
         import geopandas as gpd
@@ -42,15 +41,12 @@ def resolve_county(lat, lon):
         if not os.path.exists(shp_path):
             return "Unknown"
 
-        # Load the shapefile 
+        # Load the shapefile
         counties = gpd.read_file(shp_path)
 
         # Create a Point geometry and make sure it uses the same CRS (coordinate
         # reference system) as the shapefile (typically EPSG:4326 = standard lat/lon)
-        point = gpd.GeoDataFrame(
-            [{"geometry": Point(lon, lat)}],
-            crs="EPSG:4326"
-        )
+        point = gpd.GeoDataFrame([{"geometry": Point(lon, lat)}], crs="EPSG:4326")
         if counties.crs != point.crs:
             counties = counties.to_crs("EPSG:4326")
 
@@ -63,7 +59,6 @@ def resolve_county(lat, lon):
     except Exception as e:
         logger.debug(f"County resolution failed: {e}")
         return "Unknown"
-
 
 
 # Saving new flight data
@@ -80,23 +75,22 @@ def save_flights(flights):
     for f in flights:
         county = resolve_county(f["latitude"], f["longitude"])
         record = FlightRecord(
-            icao24      = f.get("icao24"),
-            callsign    = f.get("callsign"),
-            latitude    = f.get("latitude"),
-            longitude   = f.get("longitude"),
-            altitude    = f.get("altitude"),
-            velocity    = f.get("velocity"),
-            heading     = f.get("heading"),
-            on_ground   = f.get("on_ground", False),
-            county      = county,
-            recorded_at = f.get("fetched_at", datetime.utcnow())
+            icao24=f.get("icao24"),
+            callsign=f.get("callsign"),
+            latitude=f.get("latitude"),
+            longitude=f.get("longitude"),
+            altitude=f.get("altitude"),
+            velocity=f.get("velocity"),
+            heading=f.get("heading"),
+            on_ground=f.get("on_ground", False),
+            county=county,
+            recorded_at=f.get("fetched_at", datetime.utcnow()),
         )
         db.session.add(record)
         saved += 1
 
     db.session.commit()
     logger.info(f"Saved {saved} flight records to database")
-
 
 
 # Statistics queries
@@ -112,18 +106,16 @@ def get_overview_stats():
     """
     one_hour_ago = datetime.utcnow() - timedelta(hours=1)
 
-    total_flights      = FlightRecord.query.count()
-    active_flights     = FlightRecord.query.filter(
-                             FlightRecord.recorded_at >= one_hour_ago
-                         ).count()
+    total_flights = FlightRecord.query.count()
+    active_flights = FlightRecord.query.filter(FlightRecord.recorded_at >= one_hour_ago).count()
     total_registrations = DroneRegistration.query.filter_by(owner_state="WA").count()
-    total_incidents    = IncidentReport.query.count()
+    total_incidents = IncidentReport.query.count()
 
     return {
-        "total_flights":       total_flights,
-        "active_flights":      active_flights,
+        "total_flights": total_flights,
+        "active_flights": active_flights,
         "total_registrations": total_registrations,
-        "total_incidents":     total_incidents
+        "total_incidents": total_incidents,
     }
 
 
@@ -134,10 +126,7 @@ def get_flights_by_county():
 
     """
     results = (
-        db.session.query(
-            FlightRecord.county,
-            func.count(FlightRecord.id).label("count")
-        )
+        db.session.query(FlightRecord.county, func.count(FlightRecord.id).label("count"))
         .group_by(FlightRecord.county)
         .order_by(func.count(FlightRecord.id).desc())
         .all()
@@ -151,12 +140,7 @@ def get_recent_flights(limit=200):
     Used to populate the Leaflet map markers.
     Limit to 200 to keep the map from getting too cluttered.
     """
-    records = (
-        FlightRecord.query
-        .order_by(FlightRecord.recorded_at.desc())
-        .limit(limit)
-        .all()
-    )
+    records = FlightRecord.query.order_by(FlightRecord.recorded_at.desc()).limit(limit).all()
     return [r.to_dict() for r in records]
 
 
@@ -166,10 +150,7 @@ def get_registrations_by_purpose():
     Used for the pie chart visualization.
     """
     results = (
-        db.session.query(
-            DroneRegistration.purpose,
-            func.count(DroneRegistration.id).label("count")
-        )
+        db.session.query(DroneRegistration.purpose, func.count(DroneRegistration.id).label("count"))
         .filter_by(owner_state="WA")
         .group_by(DroneRegistration.purpose)
         .all()
@@ -183,9 +164,9 @@ def get_altitude_distribution():
     for a histogram chart showing typical drone flight altitudes.
     """
     # Load altitudes into a pandas DataFrame for easy binning
-    records = db.session.query(FlightRecord.altitude).filter(
-        FlightRecord.altitude.isnot(None)
-    ).all()
+    records = (
+        db.session.query(FlightRecord.altitude).filter(FlightRecord.altitude.isnot(None)).all()
+    )
 
     if not records:
         return []
@@ -193,7 +174,7 @@ def get_altitude_distribution():
     df = pd.DataFrame(records, columns=["altitude"])
 
     # pd.cut divides values into bins. right=False means each bin is [low, high)
-    bins   = [0, 25, 50, 75, 100, 122]
+    bins = [0, 25, 50, 75, 100, 122]
     labels = ["0–25m", "25–50m", "50–75m", "75–100m", "100–122m"]
     df["bucket"] = pd.cut(df["altitude"], bins=bins, labels=labels, right=False)
 

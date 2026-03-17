@@ -5,7 +5,7 @@ Central configuration file. All settings live here so you never
 have to hunt through multiple files to change something.
 
 python-dotenv lets us load sensitive values (like API keys) from a
-.env file instead of hardcoding them. 
+.env file instead of hardcoding them.
 """
 
 import os
@@ -17,13 +17,13 @@ load_dotenv()
 
 # Flask settings
 
-FLASK_HOST = "127.0.0.1"   # Only accessible from this machine (localhost)
-FLASK_PORT = 5050           # The port the Flask server listens on
-FLASK_DEBUG = False         # Never True in production; disables auto-reloader
+FLASK_HOST = "127.0.0.1"  # Only accessible from this machine (localhost)
+FLASK_PORT = 5050  # The port the Flask server listens on
+FLASK_DEBUG = False  # Never True in production; disables auto-reloader
 
 # Database
 
-# SQLite stores everything in a single file 
+# SQLite stores everything in a single file
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE_PATH = os.path.join(BASE_DIR, "drone_data.db")
@@ -34,10 +34,10 @@ SQLALCHEMY_DATABASE_URI = f"sqlite:///{DATABASE_PATH}"
 # These lat/lon bounds are passed to the OpenSky API so we only
 # receive flights within Washington State, not the entire USA.
 WA_BOUNDS = {
-    "lamin": 45.5,    # Southern border latitude
-    "lamax": 49.0,    # Northern border latitude (Canadian border)
+    "lamin": 45.5,  # Southern border latitude
+    "lamax": 49.0,  # Northern border latitude (Canadian border)
     "lomin": -124.8,  # Western border longitude (Pacific coast)
-    "lomax": -116.9   # Eastern border longitude (Idaho border)
+    "lomax": -116.9,  # Eastern border longitude (Idaho border)
 }
 
 # OpenSky Network API

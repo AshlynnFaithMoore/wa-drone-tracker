@@ -20,8 +20,6 @@ For each endpoint we test:
 import json
 import pytest
 
-
-
 # Helper
 
 
@@ -31,12 +29,9 @@ def get_json(client, url):
     Asserts 200 status and JSON content type as a baseline check.
     """
     response = client.get(url)
-    assert response.status_code == 200, \
-        f"Expected 200 from {url}, got {response.status_code}"
-    assert "application/json" in response.content_type, \
-        f"Expected JSON content type from {url}"
+    assert response.status_code == 200, f"Expected 200 from {url}, got {response.status_code}"
+    assert "application/json" in response.content_type, f"Expected JSON content type from {url}"
     return json.loads(response.data)
-
 
 
 # GET /api/stats
@@ -47,25 +42,24 @@ class TestApiStats:
     def test_returns_200_with_empty_db(self, client):
         """Endpoint should work even with no data in the database."""
         data = get_json(client, "/api/stats")
-        assert data["total_flights"]       == 0
-        assert data["active_flights"]      == 0
+        assert data["total_flights"] == 0
+        assert data["active_flights"] == 0
         assert data["total_registrations"] == 0
-        assert data["total_incidents"]     == 0
+        assert data["total_incidents"] == 0
 
-    def test_returns_correct_counts(self, client, sample_flights,
-                                    sample_registrations, sample_incidents):
+    def test_returns_correct_counts(
+        self, client, sample_flights, sample_registrations, sample_incidents
+    ):
         """After seeding data, counts should match what was inserted."""
         data = get_json(client, "/api/stats")
-        assert data["total_flights"]       == 3
+        assert data["total_flights"] == 3
         assert data["total_registrations"] == 4
-        assert data["total_incidents"]     == 3
+        assert data["total_incidents"] == 3
 
     def test_response_has_all_required_keys(self, client):
         data = get_json(client, "/api/stats")
-        for key in ["total_flights", "active_flights",
-                    "total_registrations", "total_incidents"]:
+        for key in ["total_flights", "active_flights", "total_registrations", "total_incidents"]:
             assert key in data, f"Missing key: {key}"
-
 
 
 # GET /api/flights/by-county
@@ -84,7 +78,7 @@ class TestApiFlightsByCounty:
 
         for item in data:
             assert "county" in item
-            assert "count"  in item
+            assert "count" in item
             assert isinstance(item["count"], int)
 
     def test_sorted_descending(self, client, sample_flights):
@@ -92,7 +86,6 @@ class TestApiFlightsByCounty:
         data = get_json(client, "/api/flights/by-county")
         counts = [item["count"] for item in data]
         assert counts == sorted(counts, reverse=True)
-
 
 
 # GET /api/flights/recent
@@ -112,18 +105,16 @@ class TestApiFlightsRecent:
         """Every record must have lat/lon for the map to place markers."""
         data = get_json(client, "/api/flights/recent")
         for record in data:
-            assert "latitude"  in record
+            assert "latitude" in record
             assert "longitude" in record
-            assert record["latitude"]  is not None
+            assert record["latitude"] is not None
             assert record["longitude"] is not None
 
     def test_records_have_all_expected_fields(self, client, sample_flights):
         data = get_json(client, "/api/flights/recent")
-        required = {"id", "icao24", "latitude", "longitude",
-                    "altitude", "county", "recorded_at"}
+        required = {"id", "icao24", "latitude", "longitude", "altitude", "county", "recorded_at"}
         for record in data:
             assert required.issubset(record.keys())
-
 
 
 # GET /api/registrations/by-purpose
@@ -138,15 +129,14 @@ class TestApiRegistrationsByPurpose:
     def test_returns_purpose_counts(self, client, sample_registrations):
         data = get_json(client, "/api/registrations/by-purpose")
         purposes = {item["purpose"]: item["count"] for item in data}
-        assert purposes["Commercial"]   == 2
+        assert purposes["Commercial"] == 2
         assert purposes["Recreational"] == 2
 
     def test_each_item_has_required_keys(self, client, sample_registrations):
         data = get_json(client, "/api/registrations/by-purpose")
         for item in data:
             assert "purpose" in item
-            assert "count"   in item
-
+            assert "count" in item
 
 
 # GET /api/flights/altitude-distribution
@@ -165,7 +155,6 @@ class TestApiAltitudeDistribution:
         for item in data:
             assert "range" in item
             assert "count" in item
-
 
 
 # GET /api/incidents
@@ -189,8 +178,7 @@ class TestApiIncidents:
 
     def test_each_incident_has_required_fields(self, client, sample_incidents):
         data = get_json(client, "/api/incidents")
-        required = {"id", "incident_date", "location",
-                    "county", "severity", "description"}
+        required = {"id", "incident_date", "location", "county", "severity", "description"}
         for item in data:
             assert required.issubset(item.keys())
 
@@ -200,7 +188,6 @@ class TestApiIncidents:
         data = get_json(client, "/api/incidents")
         for item in data:
             assert item["severity"] in valid_severities
-
 
 
 # 404 handling

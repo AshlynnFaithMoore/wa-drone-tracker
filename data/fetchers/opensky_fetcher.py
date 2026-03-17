@@ -19,7 +19,7 @@ from config import (
     OPENSKY_USERNAME,
     OPENSKY_PASSWORD,
     WA_BOUNDS,
-    DRONE_MAX_ALTITUDE_METERS
+    DRONE_MAX_ALTITUDE_METERS,
 )
 
 # Set up a logger for this module. Messages will appear in the console
@@ -39,13 +39,13 @@ def fetch_wa_flights():
     """
 
     # Build the API URL with query parameters for the WA bounding box.
-    
+
     url = f"{OPENSKY_BASE_URL}/states/all"
     params = {
         "lamin": WA_BOUNDS["lamin"],
         "lamax": WA_BOUNDS["lamax"],
         "lomin": WA_BOUNDS["lomin"],
-        "lomax": WA_BOUNDS["lomax"]
+        "lomax": WA_BOUNDS["lomax"],
     }
 
     # Use HTTP Basic Auth if credentials are configured, otherwise anonymous.
@@ -58,7 +58,7 @@ def fetch_wa_flights():
         response = requests.get(url, params=params, auth=auth, timeout=10)
 
         # raise_for_status() throws an exception if the HTTP status code
-        # indicates an error 
+        # indicates an error
         response.raise_for_status()
 
         data = response.json()
@@ -82,23 +82,25 @@ def fetch_wa_flights():
             baro_alt = state[7]  # Can be None if transponder isn't reporting altitude
 
             # Skip aircraft that are on the ground or above the drone altitude threshold.
-            
+
             if state[8]:  # on_ground is True
                 continue
             if baro_alt is None or baro_alt > DRONE_MAX_ALTITUDE_METERS:
                 continue
 
-            flights.append({
-                "icao24":    state[0],
-                "callsign":  (state[1] or "").strip(),
-                "longitude": state[5],
-                "latitude":  state[6],
-                "altitude":  baro_alt,
-                "on_ground": state[8],
-                "velocity":  state[9],
-                "heading":   state[10],
-                "fetched_at": datetime.utcnow()
-            })
+            flights.append(
+                {
+                    "icao24": state[0],
+                    "callsign": (state[1] or "").strip(),
+                    "longitude": state[5],
+                    "latitude": state[6],
+                    "altitude": baro_alt,
+                    "on_ground": state[8],
+                    "velocity": state[9],
+                    "heading": state[10],
+                    "fetched_at": datetime.utcnow(),
+                }
+            )
 
         logger.info(f"Fetched {len(flights)} low-altitude flights in WA")
         return flights

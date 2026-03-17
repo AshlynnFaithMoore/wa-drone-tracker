@@ -33,29 +33,30 @@ class TestDashboardPage:
         """The dashboard must have the canvas IDs that dashboard.js targets."""
         response = client.get("/")
         html = response.data
-        assert b"countyChart"   in html
-        assert b"purposeChart"  in html
+        assert b"countyChart" in html
+        assert b"purposeChart" in html
         assert b"altitudeChart" in html
 
     def test_index_contains_kpi_elements(self, client):
         """KPI card element IDs must be present for dashboard.js to update."""
         response = client.get("/")
         html = response.data
-        assert b"kpi-total-flights"  in html
+        assert b"kpi-total-flights" in html
         assert b"kpi-active-flights" in html
-        assert b"kpi-registrations"  in html
-        assert b"kpi-incidents"      in html
+        assert b"kpi-registrations" in html
+        assert b"kpi-incidents" in html
 
     def test_index_contains_nav_links(self, client):
         """Navigation bar should contain links to all pages."""
         response = client.get("/")
         html = response.data
-        assert b'href="/map"'          in html
-        assert b'href="/incidents"'    in html
+        assert b'href="/map"' in html
+        assert b'href="/incidents"' in html
         assert b'href="/registrations"' in html
 
-    def test_index_shows_server_side_stats(self, client, sample_flights,
-                                           sample_registrations, sample_incidents):
+    def test_index_shows_server_side_stats(
+        self, client, sample_flights, sample_registrations, sample_incidents
+    ):
         """
         The index route passes stats to the template for server-side rendering.
         With 3 flights inserted, the number '3' should appear in the HTML.
@@ -85,7 +86,7 @@ class TestMapPage:
         """County filter and altitude slider must be present."""
         response = client.get("/map")
         assert b'id="county-filter"' in response.data
-        assert b'id="alt-filter"'    in response.data
+        assert b'id="alt-filter"' in response.data
 
 
 class TestIncidentsPage:
@@ -98,13 +99,13 @@ class TestIncidentsPage:
         """The incidents table and tbody must exist for incidents.js."""
         response = client.get("/incidents")
         assert b'id="incidents-table"' in response.data
-        assert b'id="incidents-body"'  in response.data
+        assert b'id="incidents-body"' in response.data
 
     def test_incidents_contains_filter_bar(self, client):
         response = client.get("/incidents")
-        assert b'id="search-input"'    in response.data
+        assert b'id="search-input"' in response.data
         assert b'id="severity-filter"' in response.data
-        assert b'id="county-filter"'   in response.data
+        assert b'id="county-filter"' in response.data
 
     def test_incidents_contains_export_button(self, client):
         response = client.get("/incidents")
@@ -125,7 +126,7 @@ class TestRegistrationsPage:
     def test_registrations_contains_charts(self, client):
         response = client.get("/registrations")
         assert b"regsByCountyChart" in response.data
-        assert b"trendChart"        in response.data
+        assert b"trendChart" in response.data
 
     def test_registrations_contains_table(self, client):
         response = client.get("/registrations")
@@ -147,5 +148,4 @@ class TestErrorPages:
         """
         for url in ["/", "/map", "/incidents", "/registrations"]:
             response = client.get(url)
-            assert b"WA Drone Tracker" in response.data, \
-                f"Nav brand not found on {url}"
+            assert b"WA Drone Tracker" in response.data, f"Nav brand not found on {url}"

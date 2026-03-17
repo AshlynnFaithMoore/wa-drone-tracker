@@ -16,10 +16,7 @@ from config import REFRESH_INTERVAL_SECONDS
 import logging
 
 # Configure logging so all modules write to the same console format
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
 
 
 def create_app():
@@ -42,7 +39,7 @@ def create_app():
     # Tell SQLAlchemy where the database is
     app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
 
-    # Disable SQLAlchemy's modification tracking 
+    # Disable SQLAlchemy's modification tracking
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # Connect SQLAlchemy to this Flask app instance
@@ -52,18 +49,16 @@ def create_app():
     with app.app_context():
         db.create_all()
 
-    
-    # Register Blueprints 
+    # Register Blueprints
     # Blueprints let us split routes across multiple files instead of
     # putting everything in app.py. Import them here and register them.
 
     from routes.views import views_bp
     from routes.api import api_bp
 
-    app.register_blueprint(views_bp)           # HTML pages (/, /map, /incidents)
+    app.register_blueprint(views_bp)  # HTML pages (/, /map, /incidents)
     app.register_blueprint(api_bp, url_prefix="/api")  # JSON endpoints (/api/stats, etc.)
 
-    
     # Background Scheduler
     # APScheduler runs functions on a schedule in a background thread.
     # Use it to automatically fetch new OpenSky data every N seconds
@@ -91,7 +86,7 @@ def create_app():
         trigger="interval",
         seconds=REFRESH_INTERVAL_SECONDS,
         id="opensky_fetch",
-        replace_existing=True
+        replace_existing=True,
     )
 
     scheduler.start()
@@ -100,7 +95,7 @@ def create_app():
 
 
 # Run directly (python app.py)
-#This block only runs if you start Flask standalone for testing.
+# This block only runs if you start Flask standalone for testing.
 
 if __name__ == "__main__":
     app = create_app()

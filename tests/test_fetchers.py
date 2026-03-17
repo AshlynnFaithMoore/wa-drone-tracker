@@ -4,7 +4,7 @@ tests/test_fetchers.py
 Unit tests for the OpenSky and FAA data fetchers.
 
 Key technique: mocking external HTTP calls.
-   
+
 
 Using unittest.mock.patch to replace requests.get with a fake
     function that returns a controlled response. The code under test
@@ -22,8 +22,6 @@ import csv
 
 from data.fetchers.opensky_fetcher import fetch_wa_flights
 
-
-
 # Helpers
 
 
@@ -40,7 +38,6 @@ def make_mock_response(json_data, status_code=200):
     return mock
 
 
-
 # OpenSky fetcher tests
 
 
@@ -53,20 +50,85 @@ class TestFetchWaFlights:
         "states": [
             # icao24, callsign, origin, time_pos, last_contact,
             # lon, lat, baro_alt, on_ground, velocity, true_track, ...
-            ["abc123", "DRONE1  ", "WA", 1717200000, 1717200000,
-             -122.33, 47.61, 45.0, False, 5.5, 90.0, 0.0, None, None, False, 0, ""],
-
-            ["def456", "DRONE2  ", "WA", 1717200000, 1717200000,
-             -122.44, 47.25, 85.0, False, 8.2, 180.0, 0.0, None, None, False, 0, ""],
-
+            [
+                "abc123",
+                "DRONE1  ",
+                "WA",
+                1717200000,
+                1717200000,
+                -122.33,
+                47.61,
+                45.0,
+                False,
+                5.5,
+                90.0,
+                0.0,
+                None,
+                None,
+                False,
+                0,
+                "",
+            ],
+            [
+                "def456",
+                "DRONE2  ",
+                "WA",
+                1717200000,
+                1717200000,
+                -122.44,
+                47.25,
+                85.0,
+                False,
+                8.2,
+                180.0,
+                0.0,
+                None,
+                None,
+                False,
+                0,
+                "",
+            ],
             # This one is on the ground — should be filtered out
-            ["ghi789", "GROUND  ", "WA", 1717200000, 1717200000,
-             -122.20, 47.98, 0.0, True, 0.0, 0.0, 0.0, None, None, False, 0, ""],
-
+            [
+                "ghi789",
+                "GROUND  ",
+                "WA",
+                1717200000,
+                1717200000,
+                -122.20,
+                47.98,
+                0.0,
+                True,
+                0.0,
+                0.0,
+                0.0,
+                None,
+                None,
+                False,
+                0,
+                "",
+            ],
             # This one is too high (commercial aircraft) — should be filtered
-            ["jkl012", "SEA123  ", "WA", 1717200000, 1717200000,
-             -122.31, 47.45, 9000.0, False, 250.0, 45.0, 0.0, None, None, False, 0, ""],
-        ]
+            [
+                "jkl012",
+                "SEA123  ",
+                "WA",
+                1717200000,
+                1717200000,
+                -122.31,
+                47.45,
+                9000.0,
+                False,
+                250.0,
+                45.0,
+                0.0,
+                None,
+                None,
+                False,
+                0,
+                "",
+            ],
+        ],
     }
 
     @patch("data.fetchers.opensky_fetcher.requests.get")
@@ -109,11 +171,11 @@ class TestFetchWaFlights:
         result = fetch_wa_flights()
 
         first = result[0]
-        assert first["icao24"]    == "abc123"
-        assert first["callsign"]  == "DRONE1"   # stripped
-        assert first["latitude"]  == 47.61
+        assert first["icao24"] == "abc123"
+        assert first["callsign"] == "DRONE1"  # stripped
+        assert first["latitude"] == 47.61
         assert first["longitude"] == -122.33
-        assert first["altitude"]  == 45.0
+        assert first["altitude"] == 45.0
         assert first["on_ground"] is False
 
     @patch("data.fetchers.opensky_fetcher.requests.get")
@@ -134,6 +196,7 @@ class TestFetchWaFlights:
     def test_returns_empty_on_timeout(self, mock_get):
         """If the request times out, should return [] without crashing."""
         import requests
+
         mock_get.side_effect = requests.exceptions.Timeout()
         result = fetch_wa_flights()
         assert result == []
@@ -142,6 +205,7 @@ class TestFetchWaFlights:
     def test_returns_empty_on_connection_error(self, mock_get):
         """If the server is unreachable, should return [] without crashing."""
         import requests
+
         mock_get.side_effect = requests.exceptions.ConnectionError()
         result = fetch_wa_flights()
         assert result == []
@@ -163,7 +227,6 @@ class TestFetchWaFlights:
         assert params["lamin"] == pytest.approx(45.5, abs=0.5)
 
 
-
 # FAA fetcher tests
 
 
@@ -171,9 +234,7 @@ class TestFaaFetcher:
 
     def _make_temp_csv(self, rows, fieldnames):
         """Helper: writes a CSV to a temp file and returns the path."""
-        tmp = tempfile.NamedTemporaryFile(
-            mode="w", suffix=".csv", delete=False, newline=""
-        )
+        tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="")
         writer = csv.DictWriter(tmp, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
@@ -183,6 +244,7 @@ class TestFaaFetcher:
     def test_import_registrations_skips_missing_file(self, app):
         """If the CSV doesn't exist, import should log a warning and return 0."""
         from data.fetchers.faa_fetcher import import_registrations
+
         with app.app_context():
             count = import_registrations(csv_path="/nonexistent/path/MASTER.txt")
         assert count == 0
@@ -192,15 +254,31 @@ class TestFaaFetcher:
         from data.fetchers.faa_fetcher import import_registrations
 
         rows = [
-            {"N-NUMBER": "N001", "STATE": "WA", "COUNTY": "King",
-             "TYPE AIRCRAFT": "6", "TYPE REGISTRANT": "1",
-             "CERT ISSUE DATE": "01/15/2023"},
-            {"N-NUMBER": "N002", "STATE": "OR", "COUNTY": "Multnomah",
-             "TYPE AIRCRAFT": "6", "TYPE REGISTRANT": "1",
-             "CERT ISSUE DATE": "02/20/2023"},
+            {
+                "N-NUMBER": "N001",
+                "STATE": "WA",
+                "COUNTY": "King",
+                "TYPE AIRCRAFT": "6",
+                "TYPE REGISTRANT": "1",
+                "CERT ISSUE DATE": "01/15/2023",
+            },
+            {
+                "N-NUMBER": "N002",
+                "STATE": "OR",
+                "COUNTY": "Multnomah",
+                "TYPE AIRCRAFT": "6",
+                "TYPE REGISTRANT": "1",
+                "CERT ISSUE DATE": "02/20/2023",
+            },
         ]
-        fieldnames = ["N-NUMBER", "STATE", "COUNTY",
-                      "TYPE AIRCRAFT", "TYPE REGISTRANT", "CERT ISSUE DATE"]
+        fieldnames = [
+            "N-NUMBER",
+            "STATE",
+            "COUNTY",
+            "TYPE AIRCRAFT",
+            "TYPE REGISTRANT",
+            "CERT ISSUE DATE",
+        ]
         path = self._make_temp_csv(rows, fieldnames)
 
         try:
@@ -214,17 +292,24 @@ class TestFaaFetcher:
         """Re-importing the same CSV should not create duplicate records."""
         from data.fetchers.faa_fetcher import import_registrations
 
-        rows = [{"N-NUMBER": "N999", "STATE": "WA", "COUNTY": "King",
-                 "TYPE AIRCRAFT": "U", "TYPE REGISTRANT": "3",
-                 "CERT ISSUE DATE": "03/01/2023"}]
+        rows = [
+            {
+                "N-NUMBER": "N999",
+                "STATE": "WA",
+                "COUNTY": "King",
+                "TYPE AIRCRAFT": "U",
+                "TYPE REGISTRANT": "3",
+                "CERT ISSUE DATE": "03/01/2023",
+            }
+        ]
         fieldnames = list(rows[0].keys())
         path = self._make_temp_csv(rows, fieldnames)
 
         try:
             with app.app_context():
-                first  = import_registrations(csv_path=path)
+                first = import_registrations(csv_path=path)
                 second = import_registrations(csv_path=path)
-            assert first  == 1
+            assert first == 1
             assert second == 0  # Already exists, no duplicates
         finally:
             os.unlink(path)
@@ -232,6 +317,7 @@ class TestFaaFetcher:
     def test_import_incidents_skips_missing_file(self, app):
         """If incidents CSV doesn't exist, should return 0 without crashing."""
         from data.fetchers.faa_fetcher import import_incidents
+
         with app.app_context():
             count = import_incidents(csv_path="/nonexistent/incidents.csv")
         assert count == 0
@@ -241,14 +327,26 @@ class TestFaaFetcher:
         from data.fetchers.faa_fetcher import import_incidents
 
         rows = [
-            {"DATE": "2024-01-10", "LOCATION": "Seattle", "COUNTY": "King",
-             "LATITUDE": "47.6062", "LONGITUDE": "-122.3321",
-             "DESCRIPTION": "Near miss", "SEVERITY": "Moderate",
-             "REPORTED_BY": "FAA"},
-            {"DATE": "2024-03-15", "LOCATION": "Tacoma", "COUNTY": "Pierce",
-             "LATITUDE": "47.2529", "LONGITUDE": "-122.4443",
-             "DESCRIPTION": "Flyover hospital", "SEVERITY": "Severe",
-             "REPORTED_BY": "Local PD"},
+            {
+                "DATE": "2024-01-10",
+                "LOCATION": "Seattle",
+                "COUNTY": "King",
+                "LATITUDE": "47.6062",
+                "LONGITUDE": "-122.3321",
+                "DESCRIPTION": "Near miss",
+                "SEVERITY": "Moderate",
+                "REPORTED_BY": "FAA",
+            },
+            {
+                "DATE": "2024-03-15",
+                "LOCATION": "Tacoma",
+                "COUNTY": "Pierce",
+                "LATITUDE": "47.2529",
+                "LONGITUDE": "-122.4443",
+                "DESCRIPTION": "Flyover hospital",
+                "SEVERITY": "Severe",
+                "REPORTED_BY": "Local PD",
+            },
         ]
         fieldnames = list(rows[0].keys())
         path = self._make_temp_csv(rows, fieldnames)

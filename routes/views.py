@@ -43,7 +43,7 @@ def index():
 def map_view():
     """
     Flight map page.
-    The map itself is built entirely by Leaflet in map.js 
+    The map itself is built entirely by Leaflet in map.js
     """
     return render_template("map.html")
 
@@ -61,7 +61,7 @@ def incidents():
 @views_bp.route("/registrations")
 def registrations():
     """
-    Registration breakdown page 
+    Registration breakdown page
     Passes summary counts to the template for server-side rendering.
     """
     total = DroneRegistration.query.filter_by(owner_state="WA").count()
@@ -73,12 +73,13 @@ def registrations():
 # These catch HTTP errors and render a friendly page instead of Flask's
 # default plain-text error response.
 
+
 @views_bp.app_errorhandler(404)
 def not_found(e):
     """
     Shown when the user navigates to a URL that doesn't exist.
     render_template returns the HTML; the second value (404) sets the
-    HTTP status code. 
+    HTTP status code.
     """
     return render_template("errors/404.html"), 404
 

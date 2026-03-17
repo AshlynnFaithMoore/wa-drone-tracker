@@ -14,9 +14,9 @@ Usage:
     python import_data.py --incidents-path /path/to/incidents.csv
     python import_data.py --wipe           #  Clear existing data before importing
 
-    
+
     SQLAlchemy needs a Flask application context to know which database
-    to connect to. 
+    to connect to.
 """
 
 import argparse
@@ -26,9 +26,7 @@ import logging
 
 # Configure logging to show clean output in the terminal
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s  %(levelname)-8s  %(message)s",
-    datefmt="%H:%M:%S"
+    level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(message)s", datefmt="%H:%M:%S"
 )
 logger = logging.getLogger("import_data")
 
@@ -41,28 +39,24 @@ parser = argparse.ArgumentParser(
     description="Import FAA drone data into the WA Drone Tracker database."
 )
 parser.add_argument(
-    "--regs-only", action="store_true",
-    help="Only import registration data (skip incidents)"
+    "--regs-only", action="store_true", help="Only import registration data (skip incidents)"
 )
 parser.add_argument(
-    "--incidents-only", action="store_true",
-    help="Only import incident data (skip registrations)"
+    "--incidents-only", action="store_true", help="Only import incident data (skip registrations)"
 )
 parser.add_argument(
-    "--regs-path", type=str, default=None,
-    help="Custom path to FAA MASTER.txt registration CSV"
+    "--regs-path", type=str, default=None, help="Custom path to FAA MASTER.txt registration CSV"
 )
 parser.add_argument(
-    "--incidents-path", type=str, default=None,
-    help="Custom path to incidents CSV file"
+    "--incidents-path", type=str, default=None, help="Custom path to incidents CSV file"
 )
 parser.add_argument(
-    "--wipe", action="store_true",
-    help="⚠ Delete ALL existing registration and incident records before importing"
+    "--wipe",
+    action="store_true",
+    help="⚠ Delete ALL existing registration and incident records before importing",
 )
 parser.add_argument(
-    "--check", action="store_true",
-    help="Just print current database counts and exit (no import)"
+    "--check", action="store_true", help="Just print current database counts and exit (no import)"
 )
 
 args = parser.parse_args()
@@ -87,9 +81,7 @@ if args.check:
     with app.app_context():
         reg_count = DroneRegistration.query.filter_by(owner_state="WA").count()
         inc_count = IncidentReport.query.count()
-        flight_count = db.session.execute(
-            db.text("SELECT COUNT(*) FROM flight_records")
-        ).scalar()
+        flight_count = db.session.execute(db.text("SELECT COUNT(*) FROM flight_records")).scalar()
         print("\n── Database Status ─────────────────────────")
         print(f"  WA Registrations : {reg_count:,}")
         print(f"  Incidents        : {inc_count:,}")
@@ -103,11 +95,10 @@ if args.check:
 
 with app.app_context():
 
-    #  Optional wipe 
+    #  Optional wipe
     if args.wipe:
         confirm = input(
-            "⚠  This will DELETE all registration and incident records. "
-            "Type 'yes' to confirm: "
+            "⚠  This will DELETE all registration and incident records. " "Type 'yes' to confirm: "
         )
         if confirm.strip().lower() != "yes":
             print("Aborted.")
@@ -119,12 +110,13 @@ with app.app_context():
         db.session.commit()
         logger.info("Wipe complete.")
 
-    # Registrations 
+    # Registrations
     if not args.incidents_only:
         logger.info("── Importing FAA registrations ──────────────")
 
         # Check that the source file exists before starting
         from config import FAA_DATA_DIR
+
         regs_path = args.regs_path or os.path.join(FAA_DATA_DIR, "MASTER.txt")
 
         if not os.path.exists(regs_path):
@@ -139,16 +131,15 @@ with app.app_context():
             )
         else:
             from data.fetchers.faa_fetcher import import_registrations
+
             count = import_registrations(csv_path=regs_path)
             logger.info(f"Registrations imported: {count:,} new records")
 
-    # Incidents 
+    # Incidents
     if not args.regs_only:
         logger.info("── Importing incidents ───────────────────────")
 
-        incidents_path = args.incidents_path or os.path.join(
-            FAA_DATA_DIR, "incidents.csv"
-        )
+        incidents_path = args.incidents_path or os.path.join(FAA_DATA_DIR, "incidents.csv")
 
         if not os.path.exists(incidents_path):
             logger.warning(f"Incident file not found: {incidents_path}")
@@ -161,10 +152,11 @@ with app.app_context():
             )
         else:
             from data.fetchers.faa_fetcher import import_incidents
+
             count = import_incidents(csv_path=incidents_path)
             logger.info(f"Incidents imported: {count:,} new records")
 
-    # Final summary 
+    # Final summary
     logger.info("── Import complete ───────────────────────────")
     reg_total = DroneRegistration.query.filter_by(owner_state="WA").count()
     inc_total = IncidentReport.query.count()

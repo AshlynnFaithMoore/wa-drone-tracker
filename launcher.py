@@ -28,7 +28,6 @@ import requests
 from app import create_app
 from config import FLASK_HOST, FLASK_PORT, REFRESH_INTERVAL_SECONDS
 
-
 # Flask thread setup
 
 
@@ -42,18 +41,12 @@ def run_flask():
     use_reloader=False is REQUIRED when running in a thread — the reloader
     spawns child processes, which breaks in a threaded context.
     """
-    flask_app.run(
-        host=FLASK_HOST,
-        port=FLASK_PORT,
-        debug=False,
-        use_reloader=False
-    )
+    flask_app.run(host=FLASK_HOST, port=FLASK_PORT, debug=False, use_reloader=False)
 
 
 # Start Flask in a background daemon thread
 flask_thread = threading.Thread(target=run_flask, daemon=True)
 flask_thread.start()
-
 
 
 # Tkinter GUI
@@ -94,28 +87,28 @@ class DroneTrackerApp(tk.Tk):
         self.after(1500, self._check_server_ready)
 
     # UI construction
-    
 
     def _build_ui(self):
         """Builds all the widgets in the window."""
 
         # --- Title ---
         title_lbl = tk.Label(
-            self, text="🛸 Washington State Drone Tracker",
+            self,
+            text="🛸 Washington State Drone Tracker",
             font=("Helvetica", 16, "bold"),
-            fg="#cdd6f4", bg="#1e1e2e"
+            fg="#cdd6f4",
+            bg="#1e1e2e",
         )
         title_lbl.pack(pady=(15, 5))
 
-        #  Server status indicator 
+        #  Server status indicator
         self.status_var = tk.StringVar(value="⏳ Starting Flask server...")
         status_lbl = tk.Label(
-            self, textvariable=self.status_var,
-            font=("Helvetica", 10), fg="#fab387", bg="#1e1e2e"
+            self, textvariable=self.status_var, font=("Helvetica", 10), fg="#fab387", bg="#1e1e2e"
         )
         status_lbl.pack()
 
-        # KPI frame (live stat counters) 
+        # KPI frame (live stat counters)
         kpi_frame = tk.Frame(self, bg="#313244", bd=1, relief="flat")
         kpi_frame.pack(fill="x", padx=20, pady=10)
 
@@ -123,10 +116,10 @@ class DroneTrackerApp(tk.Tk):
         # the label text from outside the widget.
         self.kpi_vars = {}
         kpis = [
-            ("Total Flights",       "total_flights"),
-            ("Active (Last Hour)",  "active_flights"),
-            ("WA Registrations",    "total_registrations"),
-            ("Incidents",           "total_incidents"),
+            ("Total Flights", "total_flights"),
+            ("Active (Last Hour)", "active_flights"),
+            ("WA Registrations", "total_registrations"),
+            ("Incidents", "total_incidents"),
         ]
         for i, (label, key) in enumerate(kpis):
             frame = tk.Frame(kpi_frame, bg="#313244")
@@ -136,14 +129,16 @@ class DroneTrackerApp(tk.Tk):
             val_var = tk.StringVar(value="—")
             self.kpi_vars[key] = val_var
 
-            tk.Label(frame, textvariable=val_var,
-                     font=("Helvetica", 22, "bold"),
-                     fg="#89b4fa", bg="#313244").pack()
-            tk.Label(frame, text=label,
-                     font=("Helvetica", 8),
-                     fg="#a6adc8", bg="#313244").pack()
+            tk.Label(
+                frame,
+                textvariable=val_var,
+                font=("Helvetica", 22, "bold"),
+                fg="#89b4fa",
+                bg="#313244",
+            ).pack()
+            tk.Label(frame, text=label, font=("Helvetica", 8), fg="#a6adc8", bg="#313244").pack()
 
-        # Buttons 
+        # Buttons
         btn_frame = tk.Frame(self, bg="#1e1e2e")
         btn_frame.pack(pady=5)
 
@@ -152,35 +147,43 @@ class DroneTrackerApp(tk.Tk):
             "relief": "flat",
             "padx": 15,
             "pady": 8,
-            "cursor": "hand2"
+            "cursor": "hand2",
         }
 
         tk.Button(
-            btn_frame, text="Open Dashboard",
-            bg="#89b4fa", fg="#1e1e2e",
+            btn_frame,
+            text="Open Dashboard",
+            bg="#89b4fa",
+            fg="#1e1e2e",
             command=lambda: webbrowser.open(BASE_URL),
-            **btn_style
+            **btn_style,
         ).grid(row=0, column=0, padx=5)
 
         tk.Button(
-            btn_frame, text="Open Map",
-            bg="#a6e3a1", fg="#1e1e2e",
+            btn_frame,
+            text="Open Map",
+            bg="#a6e3a1",
+            fg="#1e1e2e",
             command=lambda: webbrowser.open(f"{BASE_URL}/map"),
-            **btn_style
+            **btn_style,
         ).grid(row=0, column=1, padx=5)
 
         tk.Button(
-            btn_frame, text="Refresh Now",
-            bg="#fab387", fg="#1e1e2e",
+            btn_frame,
+            text="Refresh Now",
+            bg="#fab387",
+            fg="#1e1e2e",
             command=self._manual_refresh,
-            **btn_style
+            **btn_style,
         ).grid(row=0, column=2, padx=5)
 
         # --- Refresh interval display ---
         interval_lbl = tk.Label(
             self,
             text=f"Auto-refresh every {REFRESH_INTERVAL_SECONDS}s",
-            font=("Helvetica", 8), fg="#6c7086", bg="#1e1e2e"
+            font=("Helvetica", 8),
+            fg="#6c7086",
+            bg="#1e1e2e",
         )
         interval_lbl.pack()
 
@@ -188,24 +191,30 @@ class DroneTrackerApp(tk.Tk):
         log_frame = tk.Frame(self, bg="#1e1e2e")
         log_frame.pack(fill="both", expand=True, padx=20, pady=(5, 15))
 
-        tk.Label(log_frame, text="Activity Log",
-                 font=("Helvetica", 9, "bold"),
-                 fg="#a6adc8", bg="#1e1e2e").pack(anchor="w")
+        tk.Label(
+            log_frame,
+            text="Activity Log",
+            font=("Helvetica", 9, "bold"),
+            fg="#a6adc8",
+            bg="#1e1e2e",
+        ).pack(anchor="w")
 
         # ScrolledText is a Text widget with a built-in scrollbar
         self.log_box = scrolledtext.ScrolledText(
-            log_frame, height=8, state="disabled",
-            bg="#11111b", fg="#cdd6f4",
-            font=("Courier", 9), relief="flat"
+            log_frame,
+            height=8,
+            state="disabled",
+            bg="#11111b",
+            fg="#cdd6f4",
+            font=("Courier", 9),
+            relief="flat",
         )
         self.log_box.pack(fill="both", expand=True)
 
         # Set up a logging handler that writes to the log_box widget
         self._setup_log_handler()
 
-    
     # Logging bridge: Python logger → Tkinter text widget
-    
 
     def _setup_log_handler(self):
         """
@@ -233,9 +242,7 @@ class DroneTrackerApp(tk.Tk):
         self.log_box.see("end")  # Auto-scroll to bottom
         self.log_box.configure(state="disabled")
 
-    
     # Server readiness check
-    
 
     def _check_server_ready(self):
         """
@@ -253,9 +260,8 @@ class DroneTrackerApp(tk.Tk):
             # Server not ready yet — try again in 1 second
             self.after(1000, self._check_server_ready)
 
-    # 
+    #
     # KPI refresh
-    
 
     def _refresh_kpis(self):
         """Fetches /api/stats and updates the KPI counter labels."""
