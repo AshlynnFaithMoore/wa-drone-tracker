@@ -48,7 +48,8 @@ REGISTRATION_COLS = {
 }
 
 # FAA aircraft type codes → human-readable strings
-# Full list: https://www.faa.gov/licenses_certificates/aircraft_certification/aircraft_registry/media/ardata.pdf
+# Full list:
+#  https://www.faa.gov/licenses_certificates/aircraft_certification/aircraft_registry/media/ardata.pdf
 TYPE_MAP = {
     "1": "Glider",
     "2": "Balloon",
@@ -220,7 +221,7 @@ def import_incidents(csv_path=None):
         def safe_float(val):
             try:
                 return float(val)
-            except:
+            except Exception:
                 return None
 
         record = IncidentReport(

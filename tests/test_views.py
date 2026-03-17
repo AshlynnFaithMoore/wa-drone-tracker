@@ -16,7 +16,6 @@ a full HTML parser — fast and sufficient for smoke-testing page rendering.
 
 """
 
-import pytest
 
 
 class TestDashboardPage:

@@ -20,7 +20,7 @@ Why a background thread for Flask?
 import threading
 import webbrowser
 import tkinter as tk
-from tkinter import ttk, scrolledtext
+from tkinter import scrolledtext
 import logging
 import time
 import requests
@@ -222,7 +222,6 @@ class DroneTrackerApp(tk.Tk):
         the Tkinter ScrolledText widget instead of just the console.
         """
 
-        log_widget = self.log_box
         app_instance = self  # Reference for the after() call
 
         class TextHandler(logging.Handler):
