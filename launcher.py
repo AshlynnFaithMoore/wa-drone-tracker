@@ -22,7 +22,6 @@ import webbrowser
 import tkinter as tk
 from tkinter import scrolledtext
 import logging
-import time
 import requests
 
 from app import create_app

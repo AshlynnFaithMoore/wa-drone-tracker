@@ -18,7 +18,7 @@ Blueprint registered in app.py with no url_prefix, so:
 """
 
 from flask import Blueprint, render_template
-from models.models import FlightRecord, DroneRegistration, IncidentReport
+from models.models import DroneRegistration
 from data.processors.stats_processor import get_overview_stats
 
 views_bp = Blueprint("views", __name__)
