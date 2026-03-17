@@ -17,11 +17,12 @@ Why a background thread for Flask?
     Tkinter window is closed (i.e., when the main thread exits).
 """
 
-import threading
-import webbrowser
-import tkinter as tk
-from tkinter import scrolledtext
 import logging
+import threading
+import tkinter as tk
+import webbrowser
+from tkinter import scrolledtext
+
 import requests
 
 from app import create_app

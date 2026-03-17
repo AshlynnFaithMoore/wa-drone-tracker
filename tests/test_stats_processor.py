@@ -12,18 +12,18 @@ Naming conventions pytest uses for test discovery:
     - Test classes must start with Test (and methods with test_)
 """
 
-
 from datetime import datetime, timedelta
-from models.models import FlightRecord, DroneRegistration
-from models.models import db as _db
+
 from data.processors.stats_processor import (
-    get_overview_stats,
+    get_altitude_distribution,
     get_flights_by_county,
+    get_overview_stats,
     get_recent_flights,
     get_registrations_by_purpose,
-    get_altitude_distribution,
     save_flights,
 )
+from models.models import DroneRegistration, FlightRecord
+from models.models import db as _db
 
 # get_overview_stats()
 

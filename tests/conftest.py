@@ -22,12 +22,14 @@ Fixture scopes:
 
 """
 
-import pytest
 import os
 from datetime import date, datetime
 
+import pytest
+
 from app import create_app
-from models.models import db as _db, FlightRecord, DroneRegistration, IncidentReport
+from models.models import DroneRegistration, FlightRecord, IncidentReport
+from models.models import db as _db
 
 # App + database fixtures
 
@@ -48,11 +50,13 @@ def app():
     os.environ["DATABASE_PATH"] = ":memory:"
 
     test_app = create_app()
-    test_app.config.update({
-        "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-        "WTF_CSRF_ENABLED": False,
-    })
+    test_app.config.update(
+        {
+            "TESTING": True,
+            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            "WTF_CSRF_ENABLED": False,
+        }
+    )
     return test_app
 
 

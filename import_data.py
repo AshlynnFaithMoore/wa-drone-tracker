@@ -20,9 +20,9 @@ Usage:
 """
 
 import argparse
-import sys
-import os
 import logging
+import os
+import sys
 
 # Configure logging to show clean output in the terminal
 logging.basicConfig(
@@ -69,7 +69,7 @@ args = parser.parse_args()
 # We only need the Flask app for its database config.
 
 from app import create_app
-from models.models import db, DroneRegistration, IncidentReport
+from models.models import DroneRegistration, IncidentReport, db
 
 app = create_app()
 

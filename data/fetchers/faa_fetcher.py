@@ -23,13 +23,14 @@ Expected CSV column names are defined in the COLUMN MAPS below.
 This way if the FAA changes their format, only these dicts need updating.
 """
 
-import os
 import logging
-import pandas as pd
+import os
 from datetime import datetime
 
-from models.models import db, DroneRegistration, IncidentReport
+import pandas as pd
+
 from config import FAA_DATA_DIR
+from models.models import DroneRegistration, IncidentReport, db
 
 logger = logging.getLogger(__name__)
 

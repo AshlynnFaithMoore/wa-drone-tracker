@@ -12,8 +12,9 @@ Each class = one database table. Each class attribute = one column.
 db is a SQLAlchemy instance that gets initialized in app.py and passed around.
 """
 
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+
+from flask_sqlalchemy import SQLAlchemy
 
 # This db object is created here and imported by app.py.
 # app.py calls db.init_app(app) to connect it to the Flask app.

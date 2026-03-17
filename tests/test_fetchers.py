@@ -14,11 +14,12 @@ Using unittest.mock.patch to replace requests.get with a fake
     inside the fetcher module for the duration of the test.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
+import csv
 import os
 import tempfile
-import csv
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from data.fetchers.opensky_fetcher import fetch_wa_flights
 

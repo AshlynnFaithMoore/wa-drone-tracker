@@ -8,13 +8,20 @@ Flask is a lightweight Python listens for HTTP requests
 
 """
 
-from flask import Flask
-from models.models import db
-from config import SQLALCHEMY_DATABASE_URI, FLASK_HOST, FLASK_PORT, FLASK_DEBUG
-from apscheduler.schedulers.background import BackgroundScheduler
-from config import REFRESH_INTERVAL_SECONDS
 import logging
 import os
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from flask import Flask
+
+from config import (
+    FLASK_DEBUG,
+    FLASK_HOST,
+    FLASK_PORT,
+    REFRESH_INTERVAL_SECONDS,
+    SQLALCHEMY_DATABASE_URI,
+)
+from models.models import db
 
 # Configure logging so all modules write to the same console format
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
@@ -54,8 +61,8 @@ def create_app():
     # Blueprints let us split routes across multiple files instead of
     # putting everything in app.py. Import them here and register them.
 
-    from routes.views import views_bp
     from routes.api import api_bp
+    from routes.views import views_bp
 
     app.register_blueprint(views_bp)  # HTML pages (/, /map, /incidents)
     app.register_blueprint(api_bp, url_prefix="/api")  # JSON endpoints (/api/stats, etc.)

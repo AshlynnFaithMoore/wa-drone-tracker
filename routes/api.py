@@ -12,14 +12,15 @@ so a route defined as @api_bp.route("/stats") is accessible at /api/stats.
 """
 
 from flask import Blueprint, jsonify
+
 from data.processors.stats_processor import (
-    get_overview_stats,
+    get_altitude_distribution,
     get_flights_by_county,
+    get_overview_stats,
     get_recent_flights,
     get_registrations_by_purpose,
-    get_altitude_distribution,
 )
-from models.models import IncidentReport, DroneRegistration
+from models.models import DroneRegistration, IncidentReport
 
 # Create the blueprint object.
 api_bp = Blueprint("api", __name__)

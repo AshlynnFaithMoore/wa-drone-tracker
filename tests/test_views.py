@@ -15,6 +15,8 @@ a full HTML parser — fast and sufficient for smoke-testing page rendering.
 "Smoke tests" = quick sanity checks that the page doesn't crash.
 
 """
+
+
 class TestDashboardPage:
 
     def test_index_returns_200(self, client):

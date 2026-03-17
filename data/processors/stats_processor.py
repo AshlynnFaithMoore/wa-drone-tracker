@@ -9,11 +9,12 @@ optionally resolves which WA county a lat/lon point falls in.
 """
 
 import logging
-import pandas as pd
 from datetime import datetime, timedelta
+
+import pandas as pd
 from sqlalchemy import func
 
-from models.models import db, FlightRecord, DroneRegistration, IncidentReport
+from models.models import DroneRegistration, FlightRecord, IncidentReport, db
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +34,10 @@ def resolve_county(lat, lon):
 
     """
     try:
+        import os
+
         import geopandas as gpd
         from shapely.geometry import Point
-        import os
 
         shp_path = os.path.join("data", "shapefiles", "wa_counties.shp")
         if not os.path.exists(shp_path):

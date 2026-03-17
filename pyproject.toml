@@ -61,8 +61,7 @@ known_first_party = [
 
 skip_glob = ["venv/*", ".venv/*", "htmlcov/*"]
 
-# Show a diff of what isort would change (useful when running locally)
-show_diff = false
+
 
 
 [tool.coverage.run]

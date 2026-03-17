@@ -19,7 +19,6 @@ For each endpoint we test:
 
 import json
 
-
 # Helper
 
 

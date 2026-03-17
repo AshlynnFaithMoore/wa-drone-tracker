@@ -10,16 +10,17 @@ and by low altitude to approximate drone activity.
 API docs: https://opensky-network.org/apidoc/rest.html
 """
 
-import requests
 import logging
 from datetime import datetime
 
+import requests
+
 from config import (
-    OPENSKY_BASE_URL,
-    OPENSKY_USERNAME,
-    OPENSKY_PASSWORD,
-    WA_BOUNDS,
     DRONE_MAX_ALTITUDE_METERS,
+    OPENSKY_BASE_URL,
+    OPENSKY_PASSWORD,
+    OPENSKY_USERNAME,
+    WA_BOUNDS,
 )
 
 # Set up a logger for this module. Messages will appear in the console
