@@ -19,6 +19,8 @@ from data.processors.stats_processor import (
     get_registrations_by_purpose,
     get_altitude_distribution
 )
+from models.models import IncidentReport, DroneRegistration
+
 
 # Create the blueprint object. 
 api_bp = Blueprint("api", __name__)
@@ -92,3 +94,17 @@ def altitude_distribution():
         ]
     """
     return jsonify(get_altitude_distribution())
+
+@api_bp.route("/incidents")
+def incidents():
+    rows = IncidentReport.query.order_by(
+        IncidentReport.incident_date.desc()
+    ).all()
+    return jsonify([r.to_dict() for r in rows])
+
+
+@api_bp.route("/registrations")
+def registrations():
+    rows = DroneRegistration.query.filter_by(owner_state="WA") \
+               .order_by(DroneRegistration.registered_date.desc()).all()
+    return jsonify([r.to_dict() for r in rows])
