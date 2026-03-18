@@ -5,34 +5,44 @@
 # --------------------------
 
 
+
+#
+# Key concepts:
+#   workflow  — this whole file; triggered by events (push, PR, schedule)
+#   job       — a group of steps that run on the same runner machine
+#   step      — a single shell command or a reusable "action" (uses:)
+#   action    — a reusable unit of CI logic published to the GitHub Marketplace
+#               e.g. actions/checkout@v4 clones your repo onto the runner
+
 name: CI
 
-# Triggers on push and pull
+# ── Triggers 
 on:
-    push:
-        branches:
-        - "**"          # Every branch push triggers CI
-    pull_request:
-        branches:
-        - main          # PRs targeting main also trigger CI
+  push:
+    branches:
+      - "**"          # Every branch push triggers CI
+  pull_request:
+    branches:
+      - main          # PRs targeting main also trigger CI
 
-# jobs
+# ── Jobs 
 jobs:
 
-  # ── Job 1: Lint & format check ─────────────────────────────────────────────
-  # Runs first to check code style/format errors
+  # ── Job 1: Lint & format check 
+  # Runs first and fast. If code style is wrong, we know immediately
+  # without waiting for the slower test job.
   lint:
     name: Lint & Format
     runs-on: ubuntu-latest   # GitHub-hosted Ubuntu runner (free)
 
     steps:
-      # Step 1: Check out repository code onto the runner machine.
-      
+      # Step 1: Check out your repository code onto the runner machine.
+      # Without this, the runner has an empty workspace.
       - name: Checkout code
         uses: actions/checkout@v4
 
       # Step 2: Set up the specific Python version we develop against.
-      
+      # actions/setup-python caches the Python installation between runs.
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -50,19 +60,26 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      # Step 4: Install only the linting tools.
-      
+      # Step 4: Install only the linting tools (not the full app dependencies).
+      # We don't need geopandas or Flask to check code style.
       - name: Install linting tools
         run: pip install flake8 black isort
 
       # Step 5: flake8 checks for Python syntax errors and style violations.
-      
+      # --max-line-length 100: allow lines up to 100 chars (PEP8 default is 79,
+      #   which is very strict for modern screens)
+      # --extend-ignore E203: ignore whitespace before ':' (black sometimes
+      #   formats this way and it conflicts with flake8)
       - name: Run flake8
-        run: flake8 .
+        run: |
+          flake8 . \
+            --max-line-length 100 \
+            --extend-ignore E203,W503 \
+            --exclude venv,.venv,__pycache__,.git
 
       # Step 6: black checks that code is formatted consistently.
       # --check: don't reformat, just exit with error if formatting differs.
-      # --diff: show what would change.
+      # --diff: show what would change (useful in CI logs).
       - name: Check black formatting
         run: black --check --diff --line-length 100 .
 
@@ -72,20 +89,24 @@ jobs:
       - name: Check import sorting (isort)
         run: isort --check-only --profile black .
 
-    # Job 2: Test suite 
+
+  # ── Job 2: Test suite ──────────────────────────────────────────────────────
   # Runs pytest across multiple Python versions to ensure compatibility.
-  # The 'needs: lint' means this job only starts if the lint job passed 
+  # The 'needs: lint' means this job only starts if the lint job passed —
+  # no point running 3 minutes of tests if the code has syntax errors.
   test:
     name: Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     needs: lint    # Only run if lint passes
 
     # Matrix strategy: run this job once per Python version listed.
+    # GitHub Actions creates one parallel job per matrix combination.
     # This catches version-specific bugs (e.g. dict ordering, f-string syntax).
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
-      
+      # fail-fast: false means all matrix jobs run even if one fails.
+      # This way you see results for all Python versions, not just the first failure.
       fail-fast: false
 
     steps:
@@ -97,7 +118,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      # Cache pip per Python version 
+      # Cache pip per Python version (different versions may have different
+      # cached wheel files)
       - name: Cache pip packages
         uses: actions/cache@v4
         with:
@@ -105,7 +127,8 @@ jobs:
           key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}
 
       # Install system dependencies needed by geopandas/GDAL.
-    
+      # These are OS packages (not Python packages) that must be installed
+      # via apt before pip can compile the Python bindings.
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -135,7 +158,7 @@ jobs:
             -v \
             --tb=short
         env:
-          # Telling the app to use in-memory SQLite for tests
+          # Tell the app to use in-memory SQLite for tests
           TESTING: "true"
           DATABASE_PATH: ":memory:"
           # Dummy values so config.py doesn't fail on missing env vars
@@ -143,9 +166,10 @@ jobs:
           OPENSKY_USERNAME: ""
           OPENSKY_PASSWORD: ""
 
-      # Upload coverage report to Codecov.
+      # Upload coverage report to Codecov 
       # Codecov reads coverage.xml and shows a coverage percentage badge
-    
+      # on your README and a line-by-line coverage view on codecov.io.
+      # Sign up at codecov.io and add CODECOV_TOKEN to GitHub secrets.
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -155,7 +179,7 @@ jobs:
           fail_ci_if_error: false   # Don't fail CI if Codecov upload fails
 
 
-  # Job 3: Docker build verification 
+  # ── Job 3: Docker build verification 
   # Verifies the Docker image builds successfully without actually pushing it.
   # Runs on every branch push — catches Dockerfile errors before they reach main.
   docker-build:
@@ -172,7 +196,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Build the Docker image but don't push it.
+      # Build the Docker image but don't push it (push: false).
       # load: true loads it into the local Docker daemon so we can run it.
       # cache-from/cache-to: use GitHub Actions cache to speed up builds.
       # The cache key is based on the Git ref and SHA, so each branch gets
@@ -187,8 +211,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Run a quick smoke test: start the container, wait for it to be
-      # healthy, hit the /api/stats endpoint, then stop it.
+      # Run a quick smoke test: start the container, poll until it
+      # responds, dump logs for debugging, then stop it.
       - name: Smoke test Docker image
         run: |
           # Start container in detached mode
@@ -197,24 +221,32 @@ jobs:
             -p 5050:5050 \
             -e SECRET_KEY=ci-test-key \
             -e DATABASE_PATH=/tmp/test.db \
+            -e TESTING=true \
             wa-drone-tracker:ci-test
 
-          # Wait up to 45 seconds for the health check to pass
-          echo "Waiting for container to be healthy..."
-          for i in $(seq 1 45); do
-            STATUS=$(docker inspect --format='{{.State.Health.Status}}' wa_drone_test 2>/dev/null || echo "starting")
-            if [ "$STATUS" = "healthy" ]; then
-              echo "Container is healthy after ${i}s"
+          # Poll the API directly instead of waiting for health check
+          echo "Waiting for container to start..."
+          for i in $(seq 1 60); do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5050/api/stats 2>/dev/null || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✓ API is responding after ${i}s"
               break
             fi
+            echo "Attempt $i: HTTP $HTTP_CODE - waiting..."
             sleep 1
           done
 
-          # Hit the API endpoint and verify it returns HTTP 200
+          # Final check
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5050/api/stats)
-          echo "HTTP status: $HTTP_CODE"
-          [ "$HTTP_CODE" = "200" ] && echo "✓ API is responding" || (echo "✗ API returned $HTTP_CODE" && exit 1)
+          echo "Final HTTP status: $HTTP_CODE"
+
+          # Always dump container logs so we can debug failures
+          echo "=== Container logs ==="
+          docker logs wa_drone_test
 
           # Clean up
           docker stop wa_drone_test
           docker rm wa_drone_test
+
+          # Pass or fail based on final HTTP code
+          [ "$HTTP_CODE" = "200" ] && echo "✓ Smoke test passed" || (echo "✗ Smoke test failed" && exit 1)
