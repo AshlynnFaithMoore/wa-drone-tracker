@@ -1,0 +1,47 @@
+# .dockerignore
+
+
+
+# Python cache and bytecode — regenerated automatically at runtime
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments — we install dependencies fresh inside the container
+venv/
+.venv/
+env/
+.env/
+
+# The SQLite database — stored in a Docker volume, not the image
+*.db
+*.sqlite3
+
+# Test artifacts — not needed in the production image
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+tests/
+
+# IDE and OS files
+.idea/
+.vscode/
+*.DS_Store
+*.swp
+
+# Git history — not needed inside the container
+.git/
+.gitignore
+
+# Local environment file — secrets should never be baked into an image
+.env
+
+# Large FAA data files — mounted as a volume at runtime
+data/faa_csv/
+data/shapefiles/
+
+# Tkinter launcher — not needed in the server container
+launcher.py

@@ -1,0 +1,99 @@
+# docker-compose.yml
+
+# Docker Compose orchestrates one or more containers as a single application.
+# For this project we have one service (the Flask app)
+
+# Commands:
+#   docker compose up --build    # Build image and start container
+#   docker compose up -d         # Start in detached (background) mode
+#   docker compose down          # Stop and remove containers
+#   docker compose logs -f       # Stream logs
+#   docker compose exec app bash # Open a shell inside the running container
+
+version: "3.9"
+
+services:
+
+  # ── Main application 
+  app:
+    # Build the image from the Dockerfile in the current directory
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # Build target — use the "runtime" stage (not the builder)
+      target: runtime
+
+    # Name the running container for easy reference in logs and exec commands
+    container_name: wa_drone_tracker
+
+    # Map host port 5050 → container port 5050.
+    # Format: "HOST:CONTAINER"
+   
+    ports:
+      - "5050:5050"
+
+    # Environment variables passed into the container.
+    # Sensitive values (API keys) are read from the .env file (see env_file below).
+    environment:
+      FLASK_HOST: "0.0.0.0"
+      FLASK_PORT: "5050"
+      FLASK_DEBUG: "false"
+      DATABASE_PATH: "/app/data/drone_data.db"
+      REFRESH_INTERVAL_SECONDS: "60"
+
+    # Load additional environment variables from .env file.
+    # This file is NOT committed to version control — it holds secrets.
+    env_file:
+      - .env.example   # Falls back to example file if .env doesn't exist
+
+    # Volumes mount host directories or named volumes into the container.
+    # Changes to mounted paths persist between container restarts.
+    volumes:
+      # Named volume for the SQLite database — data survives container rebuilds
+      - drone_db:/app/data
+
+      # Bind mount for FAA CSV files 
+      - ./data/faa_csv:/app/data/faa_csv:ro       # :ro = read-only inside container
+      - ./data/shapefiles:/app/data/shapefiles:ro
+
+    # Restart policy: restart the container if it crashes, but not if
+    # you manually stop it with `docker compose down`
+    restart: unless-stopped
+
+    # Health check override 
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:5050/api/stats')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # ── Test runner (separate service, not started by default)
+  # Run with: docker compose run --rm test
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder    # Use builder stage which has all dev dependencies
+    container_name: wa_drone_tracker_test
+    environment:
+      TESTING: "true"
+      DATABASE_PATH: ":memory:"   # Use in-memory SQLite for tests (no file I/O)
+    volumes:
+      - .:/app                    # Mount full source for test discovery
+    # Override CMD to run pytest with coverage
+    command: >
+      pytest tests/
+      --cov=.
+      --cov-report=term-missing
+      --cov-report=html:htmlcov
+      -v
+    profiles:
+      - test    
+
+# ── Named volumes 
+# Named volumes are managed by Docker and persist on the host machine
+volumes:
+  drone_db:
+    name: wa_drone_tracker_drone_db
