@@ -15,7 +15,7 @@ on:
   pull_request:
     branches:
       - main
-    # Also trigger when the PR title changes 
+    # Also trigger when the PR title changes
     types: [opened, edited, synchronize, reopened]
 
 jobs:
@@ -23,8 +23,8 @@ jobs:
   # Job 1: PR title format
   # Enforces Conventional Commits format: https://www.conventionalcommits.org
   # Valid format: type(scope): description
-  
-  
+
+
   pr-title:
     name: PR Title Format
     runs-on: ubuntu-latest
@@ -45,11 +45,11 @@ jobs:
             chore
             perf
             ci
-          
+
           requireScope: false
 
 
-  # Job 2: Coverage diff comment 
+  # Job 2: Coverage diff comment
   # Runs the test suite and posts a comment on the PR showing:
   #   - Overall coverage percentage
   #   - Whether coverage went up or down compared to main
@@ -103,14 +103,14 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Minimum coverage percentage — the action will warn only
-          
+
           MINIMUM_GREEN: 80
           MINIMUM_ORANGE: 60
 
 
   # Job 3: PR size warning
   # Warns if a PR touches more than 500 lines of code.
-  
+
   size-check:
     name: PR Size Check
     runs-on: ubuntu-latest

@@ -23,10 +23,10 @@ on:
 
 jobs:
 
-  # Job 1: Weekly dependency check 
-  # Installs the latest versions of all dependencies 
+  # Job 1: Weekly dependency check
+  # Installs the latest versions of all dependencies
   # and runs the test suite. If a transitive dependency released a breaking
-  # change, this catches it 
+  # change, this catches it
   weekly-test:
     name: Weekly Test (Latest Dependencies)
     runs-on: ubuntu-latest
@@ -80,11 +80,11 @@ jobs:
             });
 
 
-  # Job 2: Docker security scan 
+  # Job 2: Docker security scan
   # Trivy is an open-source vulnerability scanner for container images.
   # It checks the OS packages and Python packages in the image against
   # the CVE (Common Vulnerabilities and Exposures) database.
-  
+
   security-scan:
     name: Docker Security Scan
     runs-on: ubuntu-latest
@@ -108,10 +108,10 @@ jobs:
 
       # Run Trivy vulnerability scanner.
       # severity: CRITICAL,HIGH — only report serious vulnerabilities
-      
+
       # exit-code: 1 — fail the job if any critical/high vulnerabilities found
       # ignore-unfixed: true — skip vulnerabilities with no available fix
-     
+
       - name: Run Trivy vulnerability scan
         uses: aquasecurity/trivy-action@master
         with:
@@ -123,7 +123,7 @@ jobs:
 
       # Also output SARIF format for GitHub's Security tab.
       # SARIF (Static Analysis Results Interchange Format) is a standard
-      # that GitHub uses to display security findings 
+      # that GitHub uses to display security findings
       - name: Run Trivy (SARIF output for GitHub Security tab)
         uses: aquasecurity/trivy-action@master
         if: always()    # Run even if the previous Trivy step failed

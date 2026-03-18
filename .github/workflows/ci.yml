@@ -16,7 +16,7 @@
 
 name: CI
 
-# ── Triggers 
+# ── Triggers
 on:
   push:
     branches:
@@ -25,10 +25,10 @@ on:
     branches:
       - main          # PRs targeting main also trigger CI
 
-# ── Jobs 
+# ── Jobs
 jobs:
 
-  # ── Job 1: Lint & format check 
+  # ── Job 1: Lint & format check
   # Runs first and fast. If code style is wrong, we know immediately
   # without waiting for the slower test job.
   lint:
@@ -66,7 +66,7 @@ jobs:
         run: pip install flake8 black isort
 
       # Step 5: flake8 checks for Python syntax errors and style violations.
-   
+
       - name: Run flake8
         run: flake8 .
 
@@ -159,7 +159,7 @@ jobs:
           OPENSKY_USERNAME: ""
           OPENSKY_PASSWORD: ""
 
-      # Upload coverage report to Codecov 
+      # Upload coverage report to Codecov
       # Codecov reads coverage.xml and shows a coverage percentage badge
       # on your README and a line-by-line coverage view on codecov.io.
       # Sign up at codecov.io and add CODECOV_TOKEN to GitHub secrets.
@@ -172,7 +172,7 @@ jobs:
           fail_ci_if_error: false   # Don't fail CI if Codecov upload fails
 
 
-  # ── Job 3: Docker build verification 
+  # ── Job 3: Docker build verification
   # Verifies the Docker image builds successfully without actually pushing it.
   # Runs on every branch push — catches Dockerfile errors before they reach main.
   docker-build:

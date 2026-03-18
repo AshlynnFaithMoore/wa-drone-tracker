@@ -14,7 +14,7 @@ version: "3.9"
 
 services:
 
-  # ── Main application 
+  # ── Main application
   app:
     # Build the image from the Dockerfile in the current directory
     build:
@@ -28,7 +28,7 @@ services:
 
     # Map host port 5050 → container port 5050.
     # Format: "HOST:CONTAINER"
-   
+
     ports:
       - "5050:5050"
 
@@ -52,7 +52,7 @@ services:
       # Named volume for the SQLite database — data survives container rebuilds
       - drone_db:/app/data
 
-      # Bind mount for FAA CSV files 
+      # Bind mount for FAA CSV files
       - ./data/faa_csv:/app/data/faa_csv:ro       # :ro = read-only inside container
       - ./data/shapefiles:/app/data/shapefiles:ro
 
@@ -60,7 +60,7 @@ services:
     # you manually stop it with `docker compose down`
     restart: unless-stopped
 
-    # Health check override 
+    # Health check override
     healthcheck:
       test: ["CMD", "python", "-c",
              "import urllib.request; urllib.request.urlopen('http://localhost:5050/api/stats')"]
@@ -90,9 +90,9 @@ services:
       --cov-report=html:htmlcov
       -v
     profiles:
-      - test    
+      - test
 
-# ── Named volumes 
+# ── Named volumes
 # Named volumes are managed by Docker and persist on the host machine
 volumes:
   drone_db:

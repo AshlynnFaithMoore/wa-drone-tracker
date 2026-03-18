@@ -86,7 +86,7 @@ omit = [
 [tool.coverage.report]
 # Lines matching these patterns are excluded from coverage reports.
 # "pragma: no cover" is a standard comment you add to lines that
-# are intentionally not tested 
+# are intentionally not tested
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",

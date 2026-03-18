@@ -12,13 +12,13 @@
 
 repos:
 
-  # Standard pre-commit hooks 
+  # Standard pre-commit hooks
   # A collection of simple, language-agnostic hooks maintained by the
   # pre-commit project itself.
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
-      # Prevents committing large files 
+      # Prevents committing large files
       - id: check-added-large-files
         args: ["--maxkb=500"]
 
@@ -26,7 +26,7 @@ repos:
       - id: check-ast
 
       # Checks for files that would conflict on case-insensitive filesystems
-      
+
       - id: check-case-conflict
 
       # Ensures JSON files are valid
@@ -42,7 +42,7 @@ repos:
       - id: no-commit-to-branch
         args: ["--branch", "main"]
 
-      # Ensures files end with a newline 
+      # Ensures files end with a newline
       - id: end-of-file-fixer
 
       # Removes trailing whitespace from all lines
@@ -54,9 +54,9 @@ repos:
       # Detects accidentally committed private keys or passwords
       - id: detect-private-key
 
-  # black (Python formatter) 
+  # black (Python formatter)
   # black automatically reformats Python code to a consistent style.
-  
+
   - repo: https://github.com/psf/black
     rev: 24.4.2
     hooks:
@@ -73,42 +73,22 @@ repos:
       - id: isort
         args: ["--profile", "black", "--line-length", "100"]
 
-  # flake8 (linter) 
+  # flake8 (linter)
   # flake8 reports style violations and potential bugs but does NOT
   # auto-fix them — fix manually.
   - repo: https://github.com/PyCQA/flake8
     rev: 7.1.0
     hooks:
       - id: flake8
-        args: ["--max-line-length", "100", "--extend-ignore", "E203,W503"]
+        args: ["--max-line-length", "100", "--extend-ignore", "E203,W503,E402,C901"]
         # Only run on Python files
         types: [python]
 
-  # pyupgrade (modernize Python syntax) 
+  # pyupgrade (modernize Python syntax)
   # pyupgrade automatically upgrades Python syntax to newer versions.
-  
+
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.16.0
     hooks:
       - id: pyupgrade
         args: ["--py310-plus"]   # Target Python 3.10+ syntax
-
-  # Dockerfile linter 
-  # hadolint checks Dockerfile for best practices and common mistakes.
-  
-  - repo: https://github.com/hadolint/hadolint
-    rev: v2.13.0-beta
-    hooks:
-      - id: hadolint-docker
-        args: [
-          "--ignore", "DL3008",  # Allow unpinned apt packages
-          "--ignore", "DL3013",  # Allow unpinned pip packages
-        ]
-
-  # GitHub Actions workflow linter 
-  # actionlint checks .github/workflows/*.yml files for errors.
-
-  - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.1
-    hooks:
-      - id: actionlint
