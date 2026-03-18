@@ -25,7 +25,7 @@ FLASK_DEBUG = False  # Never True in production; disables auto-reloader
 # Database
 
 # SQLite stores everything in a single file
-
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE_PATH = os.environ.get("DATABASE_PATH", os.path.join(BASE_DIR, "drone_data.db"))
 SQLALCHEMY_DATABASE_URI = f"sqlite:///{DATABASE_PATH}"
 
