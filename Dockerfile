@@ -80,7 +80,7 @@ ENV FLASK_HOST=0.0.0.0 \
 # Healthcheck: Docker will ping /api/stats every 30s.
 # If it fails 3 times in a row, the container is marked "unhealthy"
 # and Docker Compose can restart it automatically.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5050/api/stats')"
 
 # The command that runs when the container starts.

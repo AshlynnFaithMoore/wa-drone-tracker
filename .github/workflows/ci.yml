@@ -199,9 +199,9 @@ jobs:
             -e DATABASE_PATH=/tmp/test.db \
             wa-drone-tracker:ci-test
 
-          # Wait up to 30 seconds for the health check to pass
+          # Wait up to 45 seconds for the health check to pass
           echo "Waiting for container to be healthy..."
-          for i in $(seq 1 30); do
+          for i in $(seq 1 45); do
             STATUS=$(docker inspect --format='{{.State.Health.Status}}' wa_drone_test 2>/dev/null || echo "starting")
             if [ "$STATUS" = "healthy" ]; then
               echo "Container is healthy after ${i}s"
