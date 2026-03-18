@@ -66,16 +66,9 @@ jobs:
         run: pip install flake8 black isort
 
       # Step 5: flake8 checks for Python syntax errors and style violations.
-      # --max-line-length 100: allow lines up to 100 chars (PEP8 default is 79,
-      #   which is very strict for modern screens)
-      # --extend-ignore E203: ignore whitespace before ':' (black sometimes
-      #   formats this way and it conflicts with flake8)
+   
       - name: Run flake8
-        run: |
-          flake8 . \
-            --max-line-length 100 \
-            --extend-ignore E203,W503 \
-            --exclude venv,.venv,__pycache__,.git
+        run: flake8 .
 
       # Step 6: black checks that code is formatted consistently.
       # --check: don't reformat, just exit with error if formatting differs.
