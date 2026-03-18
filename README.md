@@ -1,5 +1,5 @@
 
-# Overview 
+# Overview
 
 WA Drone Tracker is a locally-hosted desktop application that aggregates drone data from two sources — the OpenSky Network (live flight telemetry) and the FAA (registration and incident records) — and presents it through an interactive browser-based dashboard controlled by a native Tkinter window.
 The app is designed to run entirely on your local machine with no cloud dependencies. All data is stored in a local SQLite database. The Tkinter window acts as a control panel and status monitor, while the rich data visualizations (charts, maps, tables) are rendered in your default web browser via a locally-served Flask application.
@@ -66,7 +66,3 @@ Extract all files (.shp, .dbf, .prj, .shx) to data/shapefiles/
 
 
 Note: County resolution is optional. If the shapefile is missing, flights will be stored with county = "Unknown" and the app will still work.
-
-
-
-

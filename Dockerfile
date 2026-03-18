@@ -43,12 +43,12 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 
-# ── Stage 2: runtime 
+# ── Stage 2: runtime
 FROM python:3.11-slim AS runtime
 
 WORKDIR /app
 
-# Install only the runtime OS libraries 
+# Install only the runtime OS libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
         gdal-bin \
         libgdal-dev \
