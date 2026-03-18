@@ -74,7 +74,7 @@ jobs:
       # --check: don't reformat, just exit with error if formatting differs.
       # --diff: show what would change (useful in CI logs).
       - name: Check black formatting
-        run: black --check --diff --line-length 100 .
+        run: black --check --diff --line-length 100 --target-version py311 .
 
       # Step 7: isort checks that imports are sorted correctly.
       # --check-only: don't reformat, just report.
