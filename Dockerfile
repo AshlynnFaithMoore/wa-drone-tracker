@@ -85,7 +85,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
 
 # The command that runs when the container starts.
 
-#   -w 2        : 2 worker processes
+#   -w 1        : 1 worker processes
 #   -b 0.0.0.0  : listen on all interfaces inside the container
 #   app:create_app() : call create_app() from app.py to get the Flask app
-CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:5050", "app:create_app()"]
+CMD ["gunicorn", "-w", "1", "--timeout", "120", "-b", "0.0.0.0:5050", "app:create_app()"]
