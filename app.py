@@ -97,8 +97,7 @@ def create_app():
         replace_existing=True,
     )
 
-    if not os.environ.get("TESTING"):
-        scheduler.start()
+    if not os.environ.get("TESTING") and not scheduler.running:
         scheduler.start()
 
     return app

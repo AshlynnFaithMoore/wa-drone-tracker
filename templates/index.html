@@ -7,6 +7,7 @@
   {{ stats.total_flights }} uses the 'stats' dict passed from views.py
   to render the initial values server-side before dashboard.js loads.
 -->
+
 {% extends "base.html" %}
 
 {% block title %}Dashboard — WA Drone Tracker{% endblock %}
@@ -64,11 +65,9 @@
 
 {% endblock %}
 
-{% block extra_head %}
-  <!-- Chart.js only needed on this page -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-{% endblock %}
+{% block extra_head %}{% endblock %}
 
 {% block extra_scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="/static/js/dashboard.js"></script>
 {% endblock %}
