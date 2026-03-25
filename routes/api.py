@@ -26,6 +26,18 @@ from models.models import DroneRegistration, IncidentReport
 api_bp = Blueprint("api", __name__)
 
 
+@api_bp.route("/debug/clear-registrations")
+def debug_clear_registrations():
+    from models.models import DroneRegistration
+
+    count = DroneRegistration.query.count()
+    DroneRegistration.query.delete()
+    from models.models import db
+
+    db.session.commit()
+    return jsonify({"deleted": count})
+
+
 @api_bp.route("/stats")
 def stats():
     """

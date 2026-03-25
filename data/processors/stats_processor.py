@@ -54,8 +54,8 @@ def resolve_county(lat, lon):
 
         # Spatial join: find which county polygon contains our point
         result = gpd.sjoin(point, counties, how="left", predicate="within")
-        if not result.empty and "COUNTY_NM" in result.columns:
-            return result.iloc[0]["COUNTY_NM"]
+        if not result.empty and "JURISDIC_2" in result.columns:
+            return result.iloc[0]["JURISDIC_2"]
         return "Unknown"
 
     except Exception as e:
